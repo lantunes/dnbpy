@@ -169,6 +169,14 @@ class TestDNBPy(unittest.TestCase):
         with self.assertRaises(Exception) as e:
             game_engine.select_edge(1, 'player1')
         self.assertTrue(("game is finished" in str(e.exception)))
+        boxes = game_engine.get_boxes('player1')
+        self.assertEqual(len(boxes), 1)
+        self.assertEqual(str(boxes[0]), '1-3-4-6')
+        boxes = game_engine.get_boxes('player2')
+        self.assertEqual(len(boxes), 3)
+        self.assertEqual(str(boxes[0]), '0-2-3-5')
+        self.assertEqual(str(boxes[1]), '6-8-9-11')
+        self.assertEqual(str(boxes[2]), '5-7-8-10')
 
     def test_select_edge_returns_next_player(self):
         game_engine = dnbpy.GameEngine((1, 1), ['player1', 'player2'])
