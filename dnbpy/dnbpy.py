@@ -43,14 +43,16 @@ class GameEngine:
         Selects an edge on the game board. 
         :param edge_index: the index of the edge to select 
         :param player: the player selecting the edge
-        :return: the next player to play
+        :return: the next player to play, or None if the game is finished
         """
+        if self.is_game_finished():
+            raise Exception("game is finished")
         if edge_index < 0 or edge_index > len(self._board_state) - 1:
             raise Exception("invalid edge index: %s" % edge_index)
         if self._board_state[edge_index] == 1:
             raise Exception("edge already selected: %s" % edge_index)
         if player != self._players[self._current_player]:
-            raise Exception("next player to play is %s" % self._players[self._current_player])
+            raise Exception("next player to play is: %s" % self._players[self._current_player])
         self._board_state[edge_index] = 1
         boxes_made = 0
         for box in self._boxes:
@@ -59,7 +61,7 @@ class GameEngine:
                 boxes_made += 1
         if boxes_made == 0:
             self._current_player = (self._current_player + 1) % len(self._players)
-        return self._players[self._current_player]
+        return self.get_current_player()
 
     def get_score(self, player):
         if player not in self._players:
@@ -67,7 +69,11 @@ class GameEngine:
         return len(self._players_to_boxes[player])
 
     def get_current_player(self):
-        return self._players[self._current_player]
+        """
+        Returns the current player to play, or None if the game is finished.
+        :return: the current player to play, or None if the game is finished 
+        """
+        return None if self.is_game_finished() else self._players[self._current_player]
 
     def get_boxes(self, player):
         if player not in self._players:
@@ -76,6 +82,13 @@ class GameEngine:
 
     def get_all_boxes(self):
         return self._boxes
+
+    def is_game_finished(self):
+        """
+        Whether the game is finished. The game is finished when all boxes are completed.
+        :return: whether the game is finished
+        """
+        return sum(self._board_state) == len(self._board_state)
 
 
 class Box:

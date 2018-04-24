@@ -76,20 +76,23 @@ class TestDNBPy(unittest.TestCase):
         self.assertEqual(board_state, [0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0])
 
     def test_select_edge_player_not_recognized(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception) as e:
             game_engine = dnbpy.GameEngine((2, 2), ['player1', 'player2'])
             game_engine.select_edge(2, 'player3')
+        self.assertTrue(("next player to play is: player1" in str(e.exception)))
 
     def test_select_non_existent_edge(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception) as e:
             game_engine = dnbpy.GameEngine((2, 2), ['player1', 'player2'])
             game_engine.select_edge(12, 'player1')
+        self.assertTrue(("invalid edge index: 12" in str(e.exception)))
 
     def test_select_taken_edge(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception) as e:
             game_engine = dnbpy.GameEngine((2, 2), ['player1', 'player2'])
             game_engine.select_edge(2, 'player1')
             game_engine.select_edge(2, 'player2')
+        self.assertTrue(("edge already selected: 2" in str(e.exception)))
 
     def test_get_all_boxes_1x1(self):
         game_engine = dnbpy.GameEngine((1, 1), ['player1', 'player2'])
@@ -141,6 +144,7 @@ class TestDNBPy(unittest.TestCase):
         self.assertEqual(score, 0)
         score = game_engine.get_score('player2')
         self.assertEqual(score, 1)
+        self.assertFalse(game_engine.is_game_finished())
         game_engine.select_edge(11, 'player2')
         game_engine.select_edge(6, 'player1')
         game_engine.select_edge(10, 'player2')
@@ -161,11 +165,43 @@ class TestDNBPy(unittest.TestCase):
         self.assertEqual(score, 1)
         score = game_engine.get_score('player2')
         self.assertEqual(score, 3)
+        self.assertTrue(game_engine.is_game_finished())
+        with self.assertRaises(Exception) as e:
+            game_engine.select_edge(1, 'player1')
+        self.assertTrue(("game is finished" in str(e.exception)))
+
+    def test_select_edge_returns_next_player(self):
+        game_engine = dnbpy.GameEngine((1, 1), ['player1', 'player2'])
+        next_player = game_engine.select_edge(0, 'player1')
+        self.assertEqual(next_player, 'player2')
+        next_player = game_engine.select_edge(1, 'player2')
+        self.assertEqual(next_player, 'player1')
+        next_player = game_engine.select_edge(2, 'player1')
+        self.assertEqual(next_player, 'player2')
+        next_player = game_engine.select_edge(3, 'player2')
+        self.assertIsNone(next_player)
+        self.assertEqual(game_engine.get_score('player1'), 0)
+        self.assertEqual(game_engine.get_score('player2'), 1)
+        with self.assertRaises(Exception) as e:
+            game_engine.select_edge(1, 'player1')
+        self.assertTrue(("game is finished" in str(e.exception)))
 
     def test_get_score_player_not_recognized(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception) as e:
             game_engine = dnbpy.GameEngine((2, 2), ['player1', 'player2'])
             game_engine.get_score('player3')
+        self.assertTrue(("player not recognized: player3" in str(e.exception)))
+
+    def test_get_current_player(self):
+        game_engine = dnbpy.GameEngine((1, 1), ['player1', 'player2'])
+        game_engine.select_edge(0, 'player1')
+        self.assertEqual(game_engine.get_current_player(), 'player2')
+        game_engine.select_edge(1, 'player2')
+        self.assertEqual(game_engine.get_current_player(), 'player1')
+        game_engine.select_edge(2, 'player1')
+        self.assertEqual(game_engine.get_current_player(), 'player2')
+        game_engine.select_edge(3, 'player2')
+        self.assertIsNone(game_engine.get_current_player())
 
     def test_get_boxes_2x2(self):
         game_engine = dnbpy.GameEngine((2, 2), ['player1', 'player2'])
@@ -180,6 +216,7 @@ class TestDNBPy(unittest.TestCase):
         self.assertEqual(str(boxes[0]), '0-2-3-5')
 
     def test_get_boxes_player_not_recognized(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception) as e:
             game_engine = dnbpy.GameEngine((2, 2), ['player1', 'player2'])
             game_engine.get_boxes('player3')
+        self.assertTrue(("player not recognized: player3" in str(e.exception)))
