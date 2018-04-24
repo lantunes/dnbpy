@@ -36,6 +36,18 @@ class GameEngine:
         return boxes
 
     def get_board_state(self):
+        """
+        The board edges are indexed as follows (for the 2x2 case):
+        
+        o  0  o  1  o 
+        2     3     4
+        o  5  o  6  o
+        7     8     9
+        o  10 o  11 o
+        
+        In the example above, if edges 1 and 5 are selected, the board state will be [0,1,0,0,0,1,0,0,0,0,0].
+        :return: a binary list representing the board state 
+        """
         return [s for s in self._board_state]
 
     def select_edge(self, edge_index, player):
