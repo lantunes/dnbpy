@@ -1,7 +1,15 @@
 class GameEngine:
     def __init__(self, board_size, players):
+        if not board_size:
+            raise Exception("board size must be specified")
+        if not isinstance(board_size, tuple):
+            raise Exception("board size must be a tuple")
         if len(board_size) != 2:
             raise Exception("number of rows and columns must be specified")
+        if board_size[0] <= 0 or not isinstance(board_size[0], int):
+            raise Exception("invalid board size: %s" % ','.join(board_size))
+        if board_size[1] <= 0 or not isinstance(board_size[1], int):
+            raise Exception("invalid board size: %s" % ','.join(board_size))
         if len(players) < 2:
             raise Exception("there must be at least two players specified")
         self._board_size = board_size
