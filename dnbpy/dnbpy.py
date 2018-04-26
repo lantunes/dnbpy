@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class GameEngine:
     def __init__(self, board_size, players):
         if not board_size:
@@ -22,7 +23,7 @@ class GameEngine:
         self._board_state = [0]*((2*rows*cols) + rows + cols)
         self._boxes = self._init_boxes()
         self._players_to_boxes = {}
-        self._edge_matrix = np.zeros([rows+1,cols+1])
+        self._edge_matrix = np.zeros([rows + 1, cols + 1], dtype=np.int)
         for player in players:
             self._players_to_boxes[player] = []
 
@@ -40,11 +41,10 @@ class GameEngine:
 
     def convert_string_index_to_coordinates(self,string_index):
         """
-        : Convert string-index to a 2-dimensional coordinate
-        :param string_index: index withing the string representation
+        Convert string-index to a 2-dimensional coordinate
+        :param string_index: index within the string representation
         :return: an array of tuple (coordinates of points connected to the edge)
         """
-        num_rows = self._board_size[0]+1
         num_columns = self._board_size[1] +1
 
         # specify horizontal vs vertical
@@ -61,17 +61,17 @@ class GameEngine:
             i2 = i1 + 1
             j1 = (r - num_columns + 1)
             j2 = j1
-        return ((int(i1), int(j1)), (int(i2), int(j2)))
+        return (int(i1), int(j1)), (int(i2), int(j2))
 
     def get_board_state(self):
         """
         The board edges are indexed as follows (for the 2x2 case):
         
-        o  0  o  1  o 
+        *  0  *  1  * 
         2     3     4
-        o  5  o  6  o
+        *  5  *  6  *
         7     8     9
-        o  10 o  11 o
+        *  10 *  11 *
         
         In the example above, if edges 1 and 5 are selected, the board state will be [0,1,0,0,0,1,0,0,0,0,0].
         :return: a binary list representing the board state 
@@ -103,8 +103,6 @@ class GameEngine:
             if box.contains(edge_index) and box.is_complete(self._board_state) and box not in self._players_to_boxes[player]:
                 self._players_to_boxes[player].append(box)
                 boxes_made += 1
-
-
         if boxes_made == 0:
             self._current_player = (self._current_player + 1) % len(self._players)
         return self.get_current_player()
@@ -135,6 +133,9 @@ class GameEngine:
         :return: whether the game is finished
         """
         return sum(self._board_state) == len(self._board_state)
+
+    def get_edge_matrix(self):
+        return self._edge_matrix
 
 
 class Box:

@@ -228,3 +228,214 @@ class TestDNBPy(unittest.TestCase):
             game_engine = dnbpy.GameEngine((2, 2), ['player1', 'player2'])
             game_engine.get_boxes('player3')
         self.assertTrue(("player not recognized: player3" in str(e.exception)))
+
+    def test_get_edge_matrix_3x3(self):
+        game_engine = dnbpy.GameEngine((3, 3), ['player1', 'player2'])
+        edge_matrix = game_engine.get_edge_matrix()
+        self.assertEqual(edge_matrix.tolist(), [[0, 0, 0, 0],
+                                                [0, 0, 0, 0],
+                                                [0, 0, 0, 0],
+                                                [0, 0, 0, 0]])
+        game_engine.select_edge(0, 'player1')
+        self.assertEqual(edge_matrix.tolist(), [[1, 1, 0, 0],
+                                                [0, 0, 0, 0],
+                                                [0, 0, 0, 0],
+                                                [0, 0, 0, 0]])
+        game_engine.select_edge(1, 'player2')
+        self.assertEqual(edge_matrix.tolist(), [[1, 2, 1, 0],
+                                                [0, 0, 0, 0],
+                                                [0, 0, 0, 0],
+                                                [0, 0, 0, 0]])
+        game_engine.select_edge(4, 'player1')
+        self.assertEqual(edge_matrix.tolist(), [[1, 3, 1, 0],
+                                                [0, 1, 0, 0],
+                                                [0, 0, 0, 0],
+                                                [0, 0, 0, 0]])
+        game_engine.select_edge(3, 'player2')
+        self.assertEqual(edge_matrix.tolist(), [[2, 3, 1, 0],
+                                                [1, 1, 0, 0],
+                                                [0, 0, 0, 0],
+                                                [0, 0, 0, 0]])
+        game_engine.select_edge(7, 'player1')
+        self.assertEqual(edge_matrix.tolist(), [[2, 3, 1, 0],
+                                                [2, 2, 0, 0],
+                                                [0, 0, 0, 0],
+                                                [0, 0, 0, 0]])
+        score = game_engine.get_score('player1')
+        self.assertEqual(score, 1)
+        score = game_engine.get_score('player2')
+        self.assertEqual(score, 0)
+        game_engine.select_edge(23, 'player1')
+        self.assertEqual(edge_matrix.tolist(), [[2, 3, 1, 0],
+                                                [2, 2, 0, 0],
+                                                [0, 0, 0, 0],
+                                                [0, 0, 1, 1]])
+        game_engine.select_edge(20, 'player2')
+        self.assertEqual(edge_matrix.tolist(), [[2, 3, 1, 0],
+                                                [2, 2, 0, 0],
+                                                [0, 0, 0, 1],
+                                                [0, 0, 1, 2]])
+        game_engine.select_edge(19, 'player1')
+        self.assertEqual(edge_matrix.tolist(), [[2, 3, 1, 0],
+                                                [2, 2, 0, 0],
+                                                [0, 0, 1, 1],
+                                                [0, 0, 2, 2]])
+        game_engine.select_edge(16, 'player2')
+        self.assertEqual(edge_matrix.tolist(), [[2, 3, 1, 0],
+                                                [2, 2, 0, 0],
+                                                [0, 0, 2, 2],
+                                                [0, 0, 2, 2]])
+        score = game_engine.get_score('player1')
+        self.assertEqual(score, 1)
+        score = game_engine.get_score('player2')
+        self.assertEqual(score, 1)
+        game_engine.select_edge(8, 'player2')
+        self.assertEqual(edge_matrix.tolist(), [[2, 3, 1, 0],
+                                                [2, 3, 1, 0],
+                                                [0, 0, 2, 2],
+                                                [0, 0, 2, 2]])
+        game_engine.select_edge(11, 'player1')
+        self.assertEqual(edge_matrix.tolist(), [[2, 3, 1, 0],
+                                                [2, 4, 1, 0],
+                                                [0, 1, 2, 2],
+                                                [0, 0, 2, 2]])
+        game_engine.select_edge(5, 'player2')
+        self.assertEqual(edge_matrix.tolist(), [[2, 3, 2, 0],
+                                                [2, 4, 2, 0],
+                                                [0, 1, 2, 2],
+                                                [0, 0, 2, 2]])
+        score = game_engine.get_score('player1')
+        self.assertEqual(score, 1)
+        score = game_engine.get_score('player2')
+        self.assertEqual(score, 2)
+        boxes = game_engine.get_boxes('player1')
+        self.assertEqual(len(boxes), 1)
+        self.assertEqual(str(boxes[0]), '0-3-4-7')
+        boxes = game_engine.get_boxes('player2')
+        self.assertEqual(len(boxes), 2)
+        self.assertEqual(str(boxes[0]), '16-19-20-23')
+        self.assertEqual(str(boxes[1]), '1-4-5-8')
+
+    def test_convert_string_index_to_coordinates_1x1(self):
+        game_engine = dnbpy.GameEngine((1, 1), ['player1', 'player2'])
+        coordinates = game_engine.convert_string_index_to_coordinates(0)
+        self.assertEqual(coordinates, ((0, 0), (0, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(1)
+        self.assertEqual(coordinates, ((0, 0), (1, 0)))
+        coordinates = game_engine.convert_string_index_to_coordinates(2)
+        self.assertEqual(coordinates, ((0, 1), (1, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(3)
+        self.assertEqual(coordinates, ((1, 0), (1, 1)))
+
+    def test_convert_string_index_to_coordinates_1x2(self):
+        game_engine = dnbpy.GameEngine((1, 2), ['player1', 'player2'])
+        coordinates = game_engine.convert_string_index_to_coordinates(0)
+        self.assertEqual(coordinates, ((0, 0), (0, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(1)
+        self.assertEqual(coordinates, ((0, 1), (0, 2)))
+        coordinates = game_engine.convert_string_index_to_coordinates(2)
+        self.assertEqual(coordinates, ((0, 0), (1, 0)))
+        coordinates = game_engine.convert_string_index_to_coordinates(3)
+        self.assertEqual(coordinates, ((0, 1), (1, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(4)
+        self.assertEqual(coordinates, ((0, 2), (1, 2)))
+        coordinates = game_engine.convert_string_index_to_coordinates(5)
+        self.assertEqual(coordinates, ((1, 0), (1, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(6)
+        self.assertEqual(coordinates, ((1, 1), (1, 2)))
+
+    def test_convert_string_index_to_coordinates_2x1(self):
+        game_engine = dnbpy.GameEngine((2, 1), ['player1', 'player2'])
+        coordinates = game_engine.convert_string_index_to_coordinates(0)
+        self.assertEqual(coordinates, ((0, 0), (0, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(1)
+        self.assertEqual(coordinates, ((0, 0), (1, 0)))
+        coordinates = game_engine.convert_string_index_to_coordinates(2)
+        self.assertEqual(coordinates, ((0, 1), (1, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(3)
+        self.assertEqual(coordinates, ((1, 0), (1, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(4)
+        self.assertEqual(coordinates, ((1, 0), (2, 0)))
+        coordinates = game_engine.convert_string_index_to_coordinates(5)
+        self.assertEqual(coordinates, ((1, 1), (2, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(6)
+        self.assertEqual(coordinates, ((2, 0), (2, 1)))
+
+    def test_convert_string_index_to_coordinates_2x2(self):
+        game_engine = dnbpy.GameEngine((2, 2), ['player1', 'player2'])
+        coordinates = game_engine.convert_string_index_to_coordinates(0)
+        self.assertEqual(coordinates, ((0, 0), (0, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(1)
+        self.assertEqual(coordinates, ((0, 1), (0, 2)))
+        coordinates = game_engine.convert_string_index_to_coordinates(2)
+        self.assertEqual(coordinates, ((0, 0), (1, 0)))
+        coordinates = game_engine.convert_string_index_to_coordinates(3)
+        self.assertEqual(coordinates, ((0, 1), (1, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(4)
+        self.assertEqual(coordinates, ((0, 2), (1, 2)))
+        coordinates = game_engine.convert_string_index_to_coordinates(5)
+        self.assertEqual(coordinates, ((1, 0), (1, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(6)
+        self.assertEqual(coordinates, ((1, 1), (1, 2)))
+        coordinates = game_engine.convert_string_index_to_coordinates(7)
+        self.assertEqual(coordinates, ((1, 0), (2, 0)))
+        coordinates = game_engine.convert_string_index_to_coordinates(8)
+        self.assertEqual(coordinates, ((1, 1), (2, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(9)
+        self.assertEqual(coordinates, ((1, 2), (2, 2)))
+        coordinates = game_engine.convert_string_index_to_coordinates(10)
+        self.assertEqual(coordinates, ((2, 0), (2, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(11)
+        self.assertEqual(coordinates, ((2, 1), (2, 2)))
+
+    def test_convert_string_index_to_coordinates_3x3(self):
+        game_engine = dnbpy.GameEngine((3, 3), ['player1', 'player2'])
+        coordinates = game_engine.convert_string_index_to_coordinates(0)
+        self.assertEqual(coordinates, ((0, 0), (0, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(1)
+        self.assertEqual(coordinates, ((0, 1), (0, 2)))
+        coordinates = game_engine.convert_string_index_to_coordinates(2)
+        self.assertEqual(coordinates, ((0, 2), (0, 3)))
+        coordinates = game_engine.convert_string_index_to_coordinates(3)
+        self.assertEqual(coordinates, ((0, 0), (1, 0)))
+        coordinates = game_engine.convert_string_index_to_coordinates(4)
+        self.assertEqual(coordinates, ((0, 1), (1, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(5)
+        self.assertEqual(coordinates, ((0, 2), (1, 2)))
+        coordinates = game_engine.convert_string_index_to_coordinates(6)
+        self.assertEqual(coordinates, ((0, 3), (1, 3)))
+        coordinates = game_engine.convert_string_index_to_coordinates(7)
+        self.assertEqual(coordinates, ((1, 0), (1, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(8)
+        self.assertEqual(coordinates, ((1, 1), (1, 2)))
+        coordinates = game_engine.convert_string_index_to_coordinates(9)
+        self.assertEqual(coordinates, ((1, 2), (1, 3)))
+        coordinates = game_engine.convert_string_index_to_coordinates(10)
+        self.assertEqual(coordinates, ((1, 0), (2, 0)))
+        coordinates = game_engine.convert_string_index_to_coordinates(11)
+        self.assertEqual(coordinates, ((1, 1), (2, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(12)
+        self.assertEqual(coordinates, ((1, 2), (2, 2)))
+        coordinates = game_engine.convert_string_index_to_coordinates(13)
+        self.assertEqual(coordinates, ((1, 3), (2, 3)))
+        coordinates = game_engine.convert_string_index_to_coordinates(14)
+        self.assertEqual(coordinates, ((2, 0), (2, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(15)
+        self.assertEqual(coordinates, ((2, 1), (2, 2)))
+        coordinates = game_engine.convert_string_index_to_coordinates(16)
+        self.assertEqual(coordinates, ((2, 2), (2, 3)))
+        coordinates = game_engine.convert_string_index_to_coordinates(17)
+        self.assertEqual(coordinates, ((2, 0), (3, 0)))
+        coordinates = game_engine.convert_string_index_to_coordinates(18)
+        self.assertEqual(coordinates, ((2, 1), (3, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(19)
+        self.assertEqual(coordinates, ((2, 2), (3, 2)))
+        coordinates = game_engine.convert_string_index_to_coordinates(20)
+        self.assertEqual(coordinates, ((2, 3), (3, 3)))
+        coordinates = game_engine.convert_string_index_to_coordinates(21)
+        self.assertEqual(coordinates, ((3, 0), (3, 1)))
+        coordinates = game_engine.convert_string_index_to_coordinates(22)
+        self.assertEqual(coordinates, ((3, 1), (3, 2)))
+        coordinates = game_engine.convert_string_index_to_coordinates(23)
+        self.assertEqual(coordinates, ((3, 2), (3, 3)))
+
