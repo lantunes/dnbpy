@@ -137,6 +137,48 @@ class GameEngine:
     def get_edge_matrix(self):
         return self._edge_matrix
 
+    # TODO to string:
+    """
+    *    0    *    1    * 
+
+    2         3         4
+    
+    *    5    *    6    *
+    
+    7         8         9
+    
+    *    10   *    11   * 
+    player1: 0, p2: 0
+    
+    
+    *    0    *    -    * 
+    
+    2         | player1 |
+    
+    *    5    *    -    *
+    
+    |         |    p2   |
+    
+    *    10   *    -    * 
+    player1: 1, p2: 1
+    
+    
+    *    0    *    1    *     2    *
+    
+    3         4         5          6
+    
+    *    7    *    8    *     9    *
+    
+    10        11        12         13
+    
+    *    14   *    15   *     16   *
+    
+    17        18        19         20
+    
+    *    21   *    22   *     23   *
+    player1: 0, p2: 0
+    """
+
 
 class Box:
     def __init__(self, edge1, edge2, edge3, edge4):
