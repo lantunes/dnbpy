@@ -39,11 +39,11 @@ class GameEngine:
         """
         The board edges are indexed as follows (for the 2x2 case):
         
-        o  0  o  1  o 
+        *  0  *  1  * 
         2     3     4
-        o  5  o  6  o
+        *  5  *  6  *
         7     8     9
-        o  10 o  11 o
+        *  10 *  11 *
         
         In the example above, if edges 1 and 5 are selected, the board state will be [0,1,0,0,0,1,0,0,0,0,0].
         :return: a binary list representing the board state 
@@ -101,6 +101,48 @@ class GameEngine:
         :return: whether the game is finished
         """
         return sum(self._board_state) == len(self._board_state)
+
+    # TODO to string:
+    """
+    *    0    *    1    * 
+
+    2         3         4
+    
+    *    5    *    6    *
+    
+    7         8         9
+    
+    *    10   *    11   * 
+    player1: 0, p2: 0
+    
+    
+    *    0    *    -    * 
+    
+    2         | player1 |
+    
+    *    5    *    -    *
+    
+    |         |    p2   |
+    
+    *    10   *    -    * 
+    player1: 1, p2: 1
+    
+    
+    *    0    *    1    *     2    *
+    
+    3         4         5          6
+    
+    *    7    *    8    *     9    *
+    
+    10        11        12         13
+    
+    *    14   *    15   *     16   *
+    
+    17        18        19         20
+    
+    *    21   *    22   *     23   *
+    player1: 0, p2: 0
+    """
 
 
 class Box:
