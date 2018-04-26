@@ -439,3 +439,44 @@ class TestDNBPy(unittest.TestCase):
         coordinates = game_engine.convert_string_index_to_coordinates(23)
         self.assertEqual(coordinates, ((3, 2), (3, 3)))
 
+    # TODO game_engine to string:
+    """
+    *    0    *    1    * 
+
+    2         3         4
+    
+    *    5    *    6    *
+    
+    7         8         9
+    
+    *    10   *    11   * 
+    player1: 0, p2: 0
+    
+    
+    *    0    *    -    * 
+    
+    2         | player1 |
+    
+    *    5    *    -    *
+    
+    |         |    p2   |
+    
+    *    10   *    -    * 
+    player1: 1, p2: 1
+    
+    
+    *    0    *    1    *     2    *
+    
+    3         4         5          6
+    
+    *    7    *    8    *     9    *
+    
+    10        11        12         13
+    
+    *    14   *    15   *     16   *
+    
+    17        18        19         20
+    
+    *    21   *    22   *     23   *
+    player1: 0, p2: 0
+    """
