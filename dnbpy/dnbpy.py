@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class GameEngine:
     def __init__(self, board_size, players):
         if not board_size:
@@ -20,6 +23,7 @@ class GameEngine:
         self._board_state = [0]*((2*rows*cols) + rows + cols)
         self._boxes = self._init_boxes()
         self._players_to_boxes = {}
+        self._edge_matrix = np.zeros([rows + 1, cols + 1], dtype=np.int)
         for player in players:
             self._players_to_boxes[player] = []
 
@@ -34,6 +38,30 @@ class GameEngine:
                 r_index += 1
             r_index += cols + 1
         return boxes
+
+    def convert_string_index_to_coordinates(self,string_index):
+        """
+        Convert string-index to a 2-dimensional coordinate
+        :param string_index: index within the string representation
+        :return: an array of tuple (coordinates of points connected to the edge)
+        """
+        num_columns = self._board_size[1] +1
+
+        # specify horizontal vs vertical
+        r = string_index % (2 * (num_columns - 1) + 1)
+        if r <= num_columns - 2:
+            # horizontal
+            i1 = string_index / (2 * (num_columns - 1) + 1)
+            i2 = i1
+            j1 = r
+            j2 = j1 + 1
+        else:
+            # vertical
+            i1 = string_index / (2 * (num_columns - 1) + 1)
+            i2 = i1 + 1
+            j1 = (r - num_columns + 1)
+            j2 = j1
+        return (int(i1), int(j1)), (int(i2), int(j2))
 
     def get_board_state(self):
         """
@@ -66,6 +94,10 @@ class GameEngine:
         if player != self._players[self._current_player]:
             raise Exception("next player to play is: %s" % self._players[self._current_player])
         self._board_state[edge_index] = 1
+        # also, update status of the matrix
+        coordinate = self.convert_string_index_to_coordinates(edge_index)
+        self._edge_matrix[coordinate[0]] += 1
+        self._edge_matrix[coordinate[1]] += 1
         boxes_made = 0
         for box in self._boxes:
             if box.contains(edge_index) and box.is_complete(self._board_state) and box not in self._players_to_boxes[player]:
@@ -101,6 +133,9 @@ class GameEngine:
         :return: whether the game is finished
         """
         return sum(self._board_state) == len(self._board_state)
+
+    def get_edge_matrix(self):
+        return self._edge_matrix
 
     # TODO to string:
     """
