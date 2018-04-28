@@ -23,7 +23,7 @@ class Game:
         self._board_state = [0]*((2*rows*cols) + rows + cols)
         self._boxes = self._init_boxes()
         self._players_to_boxes = {}
-        self._edge_matrix = np.zeros([rows + 1, cols + 1], dtype=np.int)
+        self._edge_matrix = self._init_edge_matrix()
         for player in players:
             self._players_to_boxes[player] = []
 
@@ -39,35 +39,53 @@ class Game:
             r_index += cols + 1
         return boxes
 
+    def _init_edge_matrix(self):
+        rows = self._board_size[0]
+        cols = self._board_size[1]
+        even = [1 if i % 2 == 0 else 0 for i in range((2*cols + 1))]
+        odd = [0] * (2*cols + 1)
+        return np.array([even if i % 2 == 0 else odd for i in range((2*rows + 1))])
+
     def get_board_size(self):
-        return self._board_size
+        return self._board_size[0], self._board_size[1]
 
     def get_players(self):
         return [player for player in self._players]
 
-    def convert_string_index_to_coordinates(self, string_index):
+    def convert_vector_index_to_coordinates(self, vector_index):
         """
-        Convert string-index to a 2-dimensional coordinate
-        :param string_index: index within the string representation
-        :return: an array of tuple (coordinates of points connected to the edge)
+        Converts vector index to edge matrix coordinates
+        :param vector_index: an int representing the index within the vector representation of the board state
+        :return: a tuple, (x, y), representing the coordinates of the edge in the edge matrix
         """
-        num_columns = self._board_size[1] +1
+        cols = self._board_size[1]
+        x = 0
+        y = 0
+        next_x = 0
+        for i in range(vector_index + 1):
+            x = next_x
+            if x % 2 == 0:
+                if y == 2*cols:
+                    y = 1
+                else:
+                    y += 1 if y == 0 else 2
+                if y == (2*cols - 1):
+                    next_x += 1
+            else:
+                y = 0 if y == (2*cols - 1) else y + 2
+                if y == 2*cols:
+                    next_x += 1
+        return x, y
 
-        # specify horizontal vs vertical
-        r = string_index % (2 * (num_columns - 1) + 1)
-        if r <= num_columns - 2:
-            # horizontal
-            i1 = string_index / (2 * (num_columns - 1) + 1)
-            i2 = i1
-            j1 = r
-            j2 = j1 + 1
-        else:
-            # vertical
-            i1 = string_index / (2 * (num_columns - 1) + 1)
-            i2 = i1 + 1
-            j1 = (r - num_columns + 1)
-            j2 = j1
-        return (int(i1), int(j1)), (int(i2), int(j2))
+    def convert_edge_matrix_to_board_state(self, edge_matrix):
+        edge_matrix = np.array(edge_matrix)
+        rows = edge_matrix.shape[0] // 2
+        cols = edge_matrix.shape[1] // 2
+        board_state = [0]*((2*rows*cols) + rows + cols)
+        for i in range(len(board_state)):
+            coordinates = self.convert_vector_index_to_coordinates(i)
+            board_state[i] = edge_matrix[coordinates]
+        return board_state
 
     def get_board_state(self):
         """
@@ -101,9 +119,8 @@ class Game:
             raise Exception("next player to play is: %s" % self._players[self._current_player])
         self._board_state[edge_index] = 1
         # also, update status of the matrix
-        coordinate = self.convert_string_index_to_coordinates(edge_index)
-        self._edge_matrix[coordinate[0]] += 1
-        self._edge_matrix[coordinate[1]] += 1
+        coordinates = self.convert_vector_index_to_coordinates(edge_index)
+        self._edge_matrix[coordinates] += 1
         boxes_made = 0
         for box in self._boxes:
             if box.contains(edge_index) and box.is_complete(self._board_state) and box not in self._players_to_boxes[player]:
@@ -131,7 +148,7 @@ class Game:
         return self._players_to_boxes[player]
 
     def get_all_boxes(self):
-        return self._boxes
+        return [box for box in self._boxes]
 
     def is_finished(self):
         """
@@ -141,7 +158,7 @@ class Game:
         return sum(self._board_state) == len(self._board_state)
 
     def get_edge_matrix(self):
-        return self._edge_matrix
+        return np.array(self._edge_matrix)
 
     def __str__(self):
         return ToString().apply(self)
