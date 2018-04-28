@@ -37,3 +37,48 @@ def convert_edge_matrix_to_board_state(edge_matrix):
         coordinates = convert_vector_index_to_coordinates((rows, cols), i)
         board_state[i] = edge_matrix[coordinates]
     return board_state
+
+
+def convert_edge_matrix_to_symmetries(edge_matrix):
+    # I symmetry
+    i = np.array(edge_matrix)
+    rows = i.shape[0]
+    cols = i.shape[1]
+
+    if rows == cols:
+        # S symmetry
+        s = np.flip(i, 1)
+        # R symmetry
+        r = np.rot90(i, 1)
+        # R^2 symmetry
+        r2 = np.rot90(i, 2)
+        # R^3 symmetry
+        r3 = np.rot90(i, 3)
+        # SR symmetry
+        sr = np.rot90(s, 1)
+        # SR^2 symmetry
+        sr2 = np.rot90(s, 2)
+        # SR^3 symmetry
+        sr3 = np.rot90(s, 3)
+        all = [i, s, r, r2, r3, sr, sr2, sr3]
+    else:
+        # S symmetry
+        s = np.flip(i, 1)
+        # R^2 symmetry
+        r2 = np.rot90(i, 2)
+        # SR^2 symmetry
+        sr2 = np.rot90(s, 2)
+        all = [i, s, r2, sr2]
+
+    def contains(list, arr):
+        for item in list:
+            if np.array_equal(item, arr):
+                return True
+        return False
+
+    symmetries = []
+    for sym in all:
+        if not contains(symmetries, sym):
+            symmetries.append(sym.tolist())
+
+    return symmetries

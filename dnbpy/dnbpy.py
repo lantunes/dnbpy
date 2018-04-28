@@ -83,7 +83,6 @@ class Game:
         if player != self._players[self._current_player]:
             raise Exception("next player to play is: %s" % self._players[self._current_player])
         self._board_state[edge_index] = 1
-        # also, update status of the matrix
         coordinates = convert_vector_index_to_coordinates(self._board_size, edge_index)
         self._edge_matrix[coordinates] += 1
         boxes_made = 0
