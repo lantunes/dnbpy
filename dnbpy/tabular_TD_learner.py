@@ -251,17 +251,17 @@ if __name__=="__main__":
             print(episode_index)
 
     #plot some results
-    plt1, = plt.plot(range(1,NUM_EPISODES+1),reward_saver,"k--",linewidth = 2)
+    plt1, = plt.plot(range(1,len(reward_saver)+1),reward_saver,"k--",linewidth = 2)
     plt.xlabel(r"Training Iteration$\times$100",size=20)
     plt.ylabel("Sum Reward", size=20)
     plt.grid(True)
     plt.show()
 
-    plt2, = plt.plot(range(1,NUM_EPISODES+1),state_saver1,"bo-",linewidth = 2)
-    plt3, = plt.plot(range(1, NUM_EPISODES + 1), state_saver2, "rd-", linewidth=2)
+    plt2, = plt.plot(range(1,len(state_saver1)+1),state_saver1,"bo-",linewidth = 2)
+    plt3, = plt.plot(range(1, len(state_saver2) + 1), state_saver2, "rd-", linewidth=2)
     plt.xlabel(r"Training Iteration$\times$100", size=20)
     plt.ylabel("State Value", size=20)
-    plt.legend([plt1,plt2],["First State","Second State"])
+    plt.legend([plt2,plt3],["First State","Second State"])
     plt.grid(True)
     plt.show()
 
