@@ -60,7 +60,7 @@ def convert_edge_matrix_to_symmetries(edge_matrix):
         sr2 = np.rot90(s, 2)
         # SR^3 symmetry
         sr3 = np.rot90(s, 3)
-        all = [i, s, r, r2, r3, sr, sr2, sr3]
+        all_possible = [i, s, r, r2, r3, sr, sr2, sr3]
     else:
         # S symmetry
         s = np.flip(i, 1)
@@ -68,7 +68,7 @@ def convert_edge_matrix_to_symmetries(edge_matrix):
         r2 = np.rot90(i, 2)
         # SR^2 symmetry
         sr2 = np.rot90(s, 2)
-        all = [i, s, r2, sr2]
+        all_possible = [i, s, r2, sr2]
 
     def contains(list, arr):
         for item in list:
@@ -77,7 +77,7 @@ def convert_edge_matrix_to_symmetries(edge_matrix):
         return False
 
     symmetries = []
-    for sym in all:
+    for sym in all_possible:
         if not contains(symmetries, sym):
             symmetries.append(sym.tolist())
 
