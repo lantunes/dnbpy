@@ -1,4 +1,4 @@
-import numpy as np
+from .misc_functions import *
 
 
 class Game:
@@ -52,41 +52,6 @@ class Game:
     def get_players(self):
         return [player for player in self._players]
 
-    def convert_vector_index_to_coordinates(self, vector_index):
-        """
-        Converts vector index to edge matrix coordinates
-        :param vector_index: an int representing the index within the vector representation of the board state
-        :return: a tuple, (x, y), representing the coordinates of the edge in the edge matrix
-        """
-        cols = self._board_size[1]
-        x = 0
-        y = 0
-        next_x = 0
-        for i in range(vector_index + 1):
-            x = next_x
-            if x % 2 == 0:
-                if y == 2*cols:
-                    y = 1
-                else:
-                    y += 1 if y == 0 else 2
-                if y == (2*cols - 1):
-                    next_x += 1
-            else:
-                y = 0 if y == (2*cols - 1) else y + 2
-                if y == 2*cols:
-                    next_x += 1
-        return x, y
-
-    def convert_edge_matrix_to_board_state(self, edge_matrix):
-        edge_matrix = np.array(edge_matrix)
-        rows = edge_matrix.shape[0] // 2
-        cols = edge_matrix.shape[1] // 2
-        board_state = [0]*((2*rows*cols) + rows + cols)
-        for i in range(len(board_state)):
-            coordinates = self.convert_vector_index_to_coordinates(i)
-            board_state[i] = edge_matrix[coordinates]
-        return board_state
-
     def get_board_state(self):
         """
         The board edges are indexed as follows (for the 2x2 case):
@@ -119,7 +84,7 @@ class Game:
             raise Exception("next player to play is: %s" % self._players[self._current_player])
         self._board_state[edge_index] = 1
         # also, update status of the matrix
-        coordinates = self.convert_vector_index_to_coordinates(edge_index)
+        coordinates = convert_vector_index_to_coordinates(self._board_size, edge_index)
         self._edge_matrix[coordinates] += 1
         boxes_made = 0
         for box in self._boxes:
