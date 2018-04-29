@@ -30,11 +30,18 @@ def main():
     print(game)
     while not game.is_finished():
         current_player = game.get_current_player()
-        try:
-            move = int(input("{} select your move: ".format(current_player)))
+
+        if current_player == "$random":
+            move = dnbpy.RandomPolicy().select_edge(game.get_board_state())
             current_player = game.select_edge(move, current_player)
-        except Exception:
-            print("illegal move selection.. select again")
+            print("computer player selects edge %s" % move)
+        else:
+            try:
+                move = int(input("{} select your move: ".format(current_player)))
+                current_player = game.select_edge(move, current_player)
+            except Exception:
+                print("illegal move selection.. select again")
+
         print(game)
 
 if __name__ == "__main__":
