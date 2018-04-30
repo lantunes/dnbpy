@@ -1,6 +1,7 @@
 import sys
 
 import dnbpy
+import ai
 
 
 def main():
@@ -26,6 +27,9 @@ def main():
         print("Error: there must be at least one column")
         sys.exit(0)
 
+    td0 = ai.TDZeroPolicy((board_rows, board_cols), epsilon=0.0, learning_rate=0.0, gamma=0.0,
+                          table_file_path='resources/td0_2x2_0.28_0.01_0.99_immediate_reward.txt')
+
     game = dnbpy.Game((board_rows, board_cols), players)
     print(game)
     while not game.is_finished():
@@ -33,12 +37,16 @@ def main():
 
         if current_player == "$random":
             move = dnbpy.RandomPolicy().select_edge(game.get_board_state())
-            current_player = game.select_edge(move, current_player)
+            current_player, _ = game.select_edge(move, current_player)
+            print("computer player selects edge %s" % move)
+        elif current_player == "$td0":
+            move = td0.select_edge(game.get_board_state())
+            current_player, _ = game.select_edge(move, current_player)
             print("computer player selects edge %s" % move)
         else:
             try:
                 move = int(input("{} select your move: ".format(current_player)))
-                current_player = game.select_edge(move, current_player)
+                current_player, _ = game.select_edge(move, current_player)
             except Exception:
                 print("illegal move selection.. select again")
 

@@ -21,10 +21,10 @@ class Game:
         self._current_player = 0
         rows = board_size[0]
         cols = board_size[1]
-        self._board_state = [0]*((2*rows*cols) + rows + cols)
+        self._board_state = init_board_state(board_size)
         self._boxes = self._init_boxes()
         self._players_to_boxes = {}
-        self._edge_matrix = self._init_edge_matrix()
+        self._edge_matrix = init_edge_matrix(board_size)
         for player in players:
             self._players_to_boxes[player] = []
 
@@ -39,13 +39,6 @@ class Game:
                 r_index += 1
             r_index += cols + 1
         return boxes
-
-    def _init_edge_matrix(self):
-        rows = self._board_size[0]
-        cols = self._board_size[1]
-        even = [1 if i % 2 == 0 else 0 for i in range((2*cols + 1))]
-        odd = [0] * (2*cols + 1)
-        return np.array([even if i % 2 == 0 else odd for i in range((2*rows + 1))])
 
     def get_board_size(self):
         return self._board_size[0], self._board_size[1]
@@ -73,7 +66,7 @@ class Game:
         Selects an edge on the game board. 
         :param edge_index: the index of the edge to select 
         :param player: the player selecting the edge
-        :return: the next player to play, or None if the game is finished
+        :return: the next player to play, or None if the game is finished, and the number of boxes made
         """
         if self.is_finished():
             raise Exception("game is finished")
@@ -93,7 +86,7 @@ class Game:
                 boxes_made += 1
         if boxes_made == 0:
             self._current_player = (self._current_player + 1) % len(self._players)
-        return self.get_current_player()
+        return self.get_current_player(), boxes_made
 
     def get_score(self, player):
         if player not in self._players:
