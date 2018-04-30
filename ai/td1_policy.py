@@ -19,6 +19,12 @@ class TDOnePolicy(TabularPolicy):
                 r = 0
             self._value_table[state_string] = value + self._learning_rate * (r + self._gamma * next_value - value)
 
+    def get_learning_rate(self):
+        return self._learning_rate
+
+    def set_learning_rate(self, lr):
+        self._learning_rate = lr
+
     def _get_value(self, state):
         state_string = self._find_state_string(state)
         return self._value_table[state_string]
