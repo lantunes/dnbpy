@@ -1,4 +1,5 @@
-import numpy as np
+from .misc_functions import *
+from .to_string import *
 
 
 class Game:
@@ -20,10 +21,10 @@ class Game:
         self._current_player = 0
         rows = board_size[0]
         cols = board_size[1]
-        self._board_state = [0]*((2*rows*cols) + rows + cols)
+        self._board_state = init_board_state(board_size)
         self._boxes = self._init_boxes()
         self._players_to_boxes = {}
-        self._edge_matrix = np.zeros([rows + 1, cols + 1], dtype=np.int)
+        self._edge_matrix = init_edge_matrix(board_size)
         for player in players:
             self._players_to_boxes[player] = []
 
@@ -40,34 +41,10 @@ class Game:
         return boxes
 
     def get_board_size(self):
-        return self._board_size
+        return self._board_size[0], self._board_size[1]
 
     def get_players(self):
         return [player for player in self._players]
-
-    def convert_string_index_to_coordinates(self, string_index):
-        """
-        Convert string-index to a 2-dimensional coordinate
-        :param string_index: index within the string representation
-        :return: an array of tuple (coordinates of points connected to the edge)
-        """
-        num_columns = self._board_size[1] +1
-
-        # specify horizontal vs vertical
-        r = string_index % (2 * (num_columns - 1) + 1)
-        if r <= num_columns - 2:
-            # horizontal
-            i1 = string_index / (2 * (num_columns - 1) + 1)
-            i2 = i1
-            j1 = r
-            j2 = j1 + 1
-        else:
-            # vertical
-            i1 = string_index / (2 * (num_columns - 1) + 1)
-            i2 = i1 + 1
-            j1 = (r - num_columns + 1)
-            j2 = j1
-        return (int(i1), int(j1)), (int(i2), int(j2))
 
     def get_board_state(self):
         """
@@ -89,7 +66,7 @@ class Game:
         Selects an edge on the game board. 
         :param edge_index: the index of the edge to select 
         :param player: the player selecting the edge
-        :return: the next player to play, or None if the game is finished
+        :return: the next player to play, or None if the game is finished, and the number of boxes made
         """
         if self.is_finished():
             raise Exception("game is finished")
@@ -100,10 +77,8 @@ class Game:
         if player != self._players[self._current_player]:
             raise Exception("next player to play is: %s" % self._players[self._current_player])
         self._board_state[edge_index] = 1
-        # also, update status of the matrix
-        coordinate = self.convert_string_index_to_coordinates(edge_index)
-        self._edge_matrix[coordinate[0]] += 1
-        self._edge_matrix[coordinate[1]] += 1
+        coordinates = convert_vector_index_to_coordinates(self._board_size, edge_index)
+        self._edge_matrix[coordinates] += 1
         boxes_made = 0
         for box in self._boxes:
             if box.contains(edge_index) and box.is_complete(self._board_state) and box not in self._players_to_boxes[player]:
@@ -111,7 +86,7 @@ class Game:
                 boxes_made += 1
         if boxes_made == 0:
             self._current_player = (self._current_player + 1) % len(self._players)
-        return self.get_current_player()
+        return self.get_current_player(), boxes_made
 
     def get_score(self, player):
         if player not in self._players:
@@ -131,7 +106,7 @@ class Game:
         return self._players_to_boxes[player]
 
     def get_all_boxes(self):
-        return self._boxes
+        return [box for box in self._boxes]
 
     def is_finished(self):
         """
@@ -141,7 +116,7 @@ class Game:
         return sum(self._board_state) == len(self._board_state)
 
     def get_edge_matrix(self):
-        return self._edge_matrix
+        return np.array(self._edge_matrix)
 
     def __str__(self):
         return ToString().apply(self)
@@ -163,74 +138,3 @@ class Box:
 
     def __str__(self):
         return '-'.join([str(x) for x in self._edges])
-
-
-class ToString:
-    def __init__(self):
-        pass
-
-    def apply(self, game):
-        rows = game.get_board_size()[0]
-        cols = game.get_board_size()[1]
-        board_state = game.get_board_state()
-        edge_to_boxes = self._get_edge_to_boxes(game.get_all_boxes())
-        players = game.get_players()
-        cur_index = 0
-        board = ""
-        for row in range(rows):
-            if row == 0:
-                for c, col in enumerate(range(cols)):
-                    edge_val = "-" if self._is_edge_selected(board_state, cur_index) else cur_index
-                    if c == 0:
-                        board += '*    {0: <3}  *'.format(edge_val)
-                    else:
-                        board += '    {0: <3}  *'.format(edge_val)
-                    cur_index += 1
-                board += '  \n                                 \n'
-            for c, col in enumerate(range(cols + 1)):
-                edge_val = "|" if self._is_edge_selected(board_state, cur_index) else cur_index
-                board += '{0: <3}'.format(edge_val)
-                if c < cols:
-                    player_for_box = self._get_player_for_box(cur_index, edge_to_boxes, game, players)
-                    if player_for_box is not None:
-                        board += ' {0: <5.5} '.format(player_for_box)
-                    else:
-                        board += '       '
-                cur_index += 1
-            board += '\n                                 \n'
-            for c, col in enumerate(range(cols)):
-                edge_val = "-" if self._is_edge_selected(board_state, cur_index) else cur_index
-                if c == 0:
-                    board += '*    {0: <3}  *'.format(edge_val)
-                else:
-                    board += '    {0: <3}  *'.format(edge_val)
-                cur_index += 1
-            board += '  \n                                 \n'
-        board += self._print_player_scores(game, players)
-        return board
-
-    def _is_edge_selected(self, board_state, edge_index):
-        return board_state[edge_index] == 1
-
-    def _get_edge_to_boxes(self, boxes):
-        edge_to_boxes = {}
-        for box in boxes:
-            edge_to_boxes[box.get_edges()[1]] = box
-        return edge_to_boxes
-
-    def _get_player_for_box(self, edge, edge_to_boxes, game, players):
-        box = edge_to_boxes[edge]
-        for player in players:
-            player_boxes = game.get_boxes(player)
-            for player_box in player_boxes:
-                if str(box) == str(player_box):
-                    return player
-        return None
-
-    def _print_player_scores(self, game, players):
-        scores = ""
-        for i, player in enumerate(players):
-            scores += "{0:}: {1:}".format(player, game.get_score(player))
-            if i < len(players) - 1:
-                scores += ", "
-        return scores
