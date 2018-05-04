@@ -38,7 +38,6 @@ for episode_num in range(1, num_episodes + 1):
     # player_to_update = 0 if episode_num % 2 == 0 else 1
     game = Game(board_size, players)
     current_player = game.get_current_player()
-    # backups = []
     backups_p1 = []
     backups_p2 = []
     while not game.is_finished():
