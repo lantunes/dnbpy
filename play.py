@@ -35,7 +35,7 @@ def main():
     td1 = ai.TDOnePolicy((board_rows, board_cols), epsilon=0.0, learning_rate=0.0, gamma=0.0,
                          table_file_path='resources/td1_2x2_0.6_1.0_0.99_delayed_selfplay100k.txt')
 
-    ent = ai.CausalEntropicPolicy(max_sample_paths=10000)
+    ent = ai.CausalEntropicPolicy((board_rows, board_cols), max_sample_paths=10000)
 
     game = dnbpy.Game((board_rows, board_cols), players)
     print(game)
