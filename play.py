@@ -35,6 +35,8 @@ def main():
     td1 = ai.TDOnePolicy((board_rows, board_cols), epsilon=0.0, learning_rate=0.0, gamma=0.0,
                          table_file_path='resources/td1_2x2_0.6_1.0_0.99_delayed_selfplay100k.txt')
 
+    ent = ai.CausalEntropicPolicy(max_sample_paths=10000)
+
     game = dnbpy.Game((board_rows, board_cols), players)
     print(game)
     while not game.is_finished():
@@ -50,6 +52,10 @@ def main():
             print("computer player selects edge %s" % move)
         elif current_player == "$td1":
             move = td1.select_edge(game.get_board_state())
+            current_player, _ = game.select_edge(move, current_player)
+            print("computer player selects edge %s" % move)
+        elif current_player == "$ent":
+            move = ent.select_edge(game.get_board_state())
             current_player, _ = game.select_edge(move, current_player)
             print("computer player selects edge %s" % move)
         else:
