@@ -9,6 +9,7 @@ ent = ai.CausalEntropicPolicy(board_size, max_sample_paths=10000)
 rand = dnbpy.RandomPolicy()
 
 
+# CausalEntropicPolicy vs RandomPolicy: {'won': 374, 'tied': 102, 'lost': 24}
 player_map = {0: ent, 1: rand}
 
 results = {'won': 0, 'lost': 0, 'tied': 0}
