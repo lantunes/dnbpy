@@ -51,7 +51,7 @@ class CausalEntropicPolicy(Policy):
         H = -sum([p_symbol * math.log(p_symbol, 2.0) for p_symbol in symbol_probabilities])
         return H + 0  # add 0 as a workaround so we don't end up with -0.0
 
-    def sample_paths(self, root_state, num_sample_paths, tree=None, root_state_id=None, my_move=True):
+    def sample_paths(self, root_state, num_sample_paths, tree=None, root_state_id=None, my_move=True, max_depth=0, current_level=0):
         root_state_string = as_string(root_state)
         if root_state_id is None:
             root_state_id = root_state_string
@@ -60,6 +60,7 @@ class CausalEntropicPolicy(Policy):
             tree.create_node(root_state_string, root_state_id)
         zero_indices = self.get_zero_indices(root_state)
         if len(zero_indices) > 0:
+            if max_depth > 0 and current_level == max_depth: return tree
             for i in range(num_sample_paths):
                 child_state, made_box = self.create_new_state_from(root_state, random.choice(zero_indices))
                 child_state_string = as_string(child_state)
@@ -67,7 +68,7 @@ class CausalEntropicPolicy(Policy):
                 if not tree.contains(child_state_id):
                     tree.create_node(child_state_string, child_state_id, parent=root_state_id, data=my_move)
                 self.sample_paths(child_state, num_sample_paths=1, tree=tree, root_state_id=child_state_id,
-                                  my_move=my_move if made_box else not my_move)
+                                  my_move=my_move if made_box else not my_move, max_depth=max_depth, current_level=current_level + 1)
         return tree
 
     def all_paths(self, root_state, tree=None, root_state_id=None, my_move=True):
