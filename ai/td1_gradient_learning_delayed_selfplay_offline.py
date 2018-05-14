@@ -3,10 +3,9 @@ from dnbpy import *
 
 board_size = (2, 2)
 num_episodes = 100000
-learning_rate = 1.0
-min_learning_rate = 1e-4
-gamma = 0.99
-epsilon = 0.6
+learning_rate = 0.5
+min_learning_rate = 0.05
+epsilon = 0.7
 min_epsilon = 0.01
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
@@ -44,19 +43,15 @@ for episode_num in range(1, num_episodes + 1):
             policy.set_should_store_history(player_to_update == 0)
             edge = policy.select_edge(board_state)
             current_player, _ = game.select_edge(edge, 0)
-            if not game.is_finished() and player_to_update == 0:
-                policy.update()
             if player_to_update == 0: unique_states_visited.add(as_string(game.get_board_state()))
         else:
             policy.set_should_store_history(player_to_update == 1)
             edge = policy.select_edge(board_state)
             current_player, _ = game.select_edge(edge, 1)
-            if not game.is_finished() and player_to_update == 1:
-                policy.update()
             if player_to_update == 1: unique_states_visited.add(as_string(game.get_board_state()))
 
     reward = compute_reward(game, player_to_update)
-    policy.update_terminal(reward)
+    policy.update_offline(reward)
     # analyze results
     if episode_num % 500 == 0:
         # policy.print_gradients()

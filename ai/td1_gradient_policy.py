@@ -95,20 +95,29 @@ class TDOneGradientPolicy(Policy):
             error = self._prediction_history[-1] - self._prediction_history[-2]
             sum_grad_W_in = np.sum(self._prediction_gradient_history[:-1], axis=0)[0]
             sum_grad_W_out = np.sum(self._prediction_gradient_history[:-1], axis=0)[1]
-            self._sess.run([self._update_W_in],
+            self._sess.run([self._update_W_in, self._update_W_out],
                            feed_dict={self._lr: self._learning_rate, self._error: error,
                                       self._sum_grad_W_in: sum_grad_W_in, self._sum_grad_W_out: sum_grad_W_out})
 
     def update_terminal(self, target):
-        # # we have to make sure there is at least one prediction made by the model, as most moves might
-        # #  have been made by epsilon greedy play, which we're not recording in the history
-        # if len(self._prediction_history) > 0:
         error = target - self._prediction_history[-1]
         sum_grad_W_in = np.sum(self._prediction_gradient_history, axis=0)[0]
         sum_grad_W_out = np.sum(self._prediction_gradient_history, axis=0)[1]
-        self._sess.run([self._update_W_in],
+        self._sess.run([self._update_W_in, self._update_W_out],
                        feed_dict={self._lr: self._learning_rate, self._error: error,
                                   self._sum_grad_W_in: sum_grad_W_in, self._sum_grad_W_out: sum_grad_W_out})
+
+    def update_offline(self, target):
+        if len(self._prediction_history) > 0:
+            for i in range(1, len(self._prediction_history) + 1):
+                prev = self._prediction_history[i - 1]
+                last = self._prediction_history[i] if i < len(self._prediction_history) else target
+                error = last - prev
+                sum_grad_W_in = np.sum(self._prediction_gradient_history[:i], axis=0)[0]
+                sum_grad_W_out = np.sum(self._prediction_gradient_history[:i], axis=0)[1]
+                self._sess.run([self._update_W_in, self._update_W_out],
+                               feed_dict={self._lr: self._learning_rate, self._error: error,
+                                          self._sum_grad_W_in: sum_grad_W_in, self._sum_grad_W_out: sum_grad_W_out})
 
     def print_params(self):
         params = self._sess.run([self._W_in, self._W_out])
