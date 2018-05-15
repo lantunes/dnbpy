@@ -94,6 +94,7 @@ class mlp_policy_network:
         return (softmax_out)
 
 
+
     def construct_mlp_model(self):
         """
         :this initializes TensorGraph and all the required parameters
@@ -105,11 +106,17 @@ class mlp_policy_network:
             # Construct model
             self._input = tf.placeholder(tf.float32, [None, self._params.num_input])
             self._output = tf.placeholder(tf.float32, [None, self._params.num_outputs])
+            self._reward = tf.placeholder(tf.float32,[None,1])
+            self._learning_rate = tf.placeholder(tf.float32, shape=[None,1])
+
             self._keep_prob = tf.placeholder(tf.float32)  # dropout (keep probability)
             self._init_weights_and_biases(self._params) #initialize the graph and required parameters
             self.logits = self.multilayer_perceptron_prediction(self._input) #Apply MLP map to the input and get output values
             #self.prediction = tf.nn.softmax(self.logits)
             self.prediction = self.softmax_with_valid_moves(self.logits,self._input)
+            self.loss_for_pg = self.policy_loss(self.prediction,self._output,self._reward)
+            self.optimizer_pg = tf.train.GradientDescentOptimizer(learning_rate=self._params.learning_rate)
+            self.train_pg = self.optimizer_pg.minimize(self.loss_for_pg)
 
             # Define loss and optimizer
             self.loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
@@ -122,6 +129,24 @@ class mlp_policy_network:
             #self.correct_pred = tf.equal(tf.argmax(self.prediction, 1), tf.argmax(self._output, 1))
             #self.accuracy = tf.reduce_mean(tf.cast(self.correct_pred, tf.float32))
             self.init_op = tf.initialize_all_variables()
+
+    def policy_loss(self,prediction,action,reward):
+        """
+
+        :param prediction: vector of softmax predictions
+        :param action: chosen move by the player
+        :param reward: return at the end of the game
+        :return:
+        """
+        loss = -tf.log(tf.reduce_sum(prediction*action,reduction_indices=1))*reward
+        return (loss)
+
+    def get_weight(self):return (self.mlp_weights[-1])
+    def display_weight(self):
+        session = self.sess
+        session.run(self.init_op)
+        out = session.run(self.get_weight())
+        return (out)
 
 
     def mlp_play(self,string_index):
@@ -138,17 +163,26 @@ class mlp_policy_network:
         out_probability = session.run(self.prediction, feed_dict=feed_dict)
         return (out_probability)
 
-    def mlp_pg_train(self,states,actions,rewards):
+    def mlp_pg_train(self,states,returns,learning_rate):
         """
 
-        :param states:
-        :param actions:
-        :param rewards:
+        :param states: list of all visited states
+        :param returns: returned reward
+        :param learning_rate: adaptive learning rate
         :return:
         """
-        pass
 
-    #def policy_loss(self):
+        session = self.sess
+        session.run(self.init_op)
+        for idx,record in enumerate(states):
+            current_state = np.array(record[0]).reshape([1,self._params.num_input])
+            action = np.zeros([1,self._params.num_outputs])
+            action[0,record[1]] = 1
+            #print(action)
+            feed_dict = {self._input: current_state,self._output: action,self._reward: np.array([returns]).reshape([1,1]),self._learning_rate:learning_rate}
+            op = session.run(self.train_pg,feed_dict=feed_dict) #training using a simple PG rule
+
+
 
     def train_mlp_policy(self,data):
         """
@@ -243,6 +277,7 @@ def one_shot_board_play(current_state,mlp_policy,tempreture,agent_type):
         probs = np.array(probs)/np.sum(probs)
         random_sample_index = np.random.multinomial(1, probs).argmax()
         next_move = random_sample_index
+        #print(temp_probs,next_move)
     elif agent_type==agent.RANDOM:
         #Uniformly sample from valid moves
         next_move = get_random_index(current_state)
@@ -250,7 +285,11 @@ def one_shot_board_play(current_state,mlp_policy,tempreture,agent_type):
 
     return (next_move)
 
-
+def gen_learning_rate(iteration,l_max,l_min,N_max):
+    if iteration>N_max: return (l_min)
+    alpha = 2*l_max
+    beta = np.log((alpha/l_min-1))/N_max
+    return (alpha/(1+np.exp(beta*iteration)))
 
 if __name__=="__main__":
 
@@ -261,11 +300,13 @@ if __name__=="__main__":
     rewards = []
     reward_saver = []
     player_to_update = 0
+    N_max = 10000
 
     #Big loop over all the episodes
-    for episode_index in range(0, 1):
-        #tempreture = gen_learning_rate(episode_index, TEMPRETURE, .01, NUM_EPISODES)
-
+    for episode_index in range(0, 100):
+        tempreture = gen_learning_rate(episode_index, 10, .01, N_max)
+        learning_rate = gen_learning_rate(episode_index,1E-3,1E-10,N_max)
+        print(tempreture,learning_rate)
         #Choose the player_index first
         if random.random() < .5:
             player_to_update = 0
@@ -285,19 +326,20 @@ if __name__=="__main__":
             player_index = engine.get_current_player()
             #Run one-step sample, use the MLP-network and get the current state and produce output probabilities; use tempreture-wise sampling
             if player_index==player_to_update:
-                line_index = one_shot_board_play(current_state, mlp_policy, 1,agent.MLP)
+                line_index = one_shot_board_play(current_state, mlp_policy, tempreture,agent.MLP)
             else:
-                line_index = one_shot_board_play(current_state,mlp_policy,1,agent.RANDOM)
+                line_index = one_shot_board_play(current_state,mlp_policy,tempreture,agent.MLP)
             #make a movement
+            # store visited states + actions for policy update
+            if not backups.has_key(player_index): backups[player_index] = []
+            backups[player_index].append([current_state, line_index])  # store all the visited states and actions as well
             engine.select_edge(line_index, player_index)
             #check for the status of the game
             if engine.is_game_finished():
                 game_condition = False
                 break
             current_state = engine.get_board_state()
-            #store visited states + actions for policy update
-            if not backups.has_key(player_index): backups[player_index] = []
-            backups[player_index].append([current_state,line_index])  # store all the visited states and actions as well
+
 
         # Get the final reward
         scores = []
@@ -309,19 +351,17 @@ if __name__=="__main__":
         else:
             reward = -1
 
+        mlp_policy.mlp_pg_train(backups[player_to_update],reward,np.array([learning_rate]).reshape([1,1]))
         #Update_part (update parameters of the MLP network using a simple Policy-gradient rule)
 
-        sys.exit(1)
+
         if episode_index % 500 == 0 and episode_index > 0:
-            reward_saver.append(sum(rewards))
-            print(episode_index, tempreture, sum(rewards))
-            rewards = []
-            # print(reward_saver)
-        else:
-            rewards.append(reward)
+            #play againt a random player
 
 
 
+
+    #print(mlp_policy.display_weight())
     #input = [0]*24
     #input[0] = 1
     #input[10] = 1

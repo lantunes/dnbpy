@@ -8,6 +8,14 @@ full_data_index = 0
 
 
 
+
+##################
+
+
+
+###################
+
+
 def reset_data_indexes():
     global train_data_index
     train_data_index = 0
