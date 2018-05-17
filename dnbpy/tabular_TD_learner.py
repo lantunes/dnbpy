@@ -1,16 +1,4 @@
 
-
-
-NEW_NODE_SCORE = 1E-6
-EPSILON = .1
-TEMPRETURE = 10
-GAMMA = 1
-INITIAL_LEARNING_RATE = 1E-3
-MIN_LEARNING_RATE = 1E-6
-import numpy as np
-import random
-NUM_EPISODES = 50000
-
 from dnbpy import GameEngine
 import numpy as np
 import random
@@ -19,13 +7,13 @@ import matplotlib.pyplot as plt
 
 NEW_NODE_SCORE = 1E-6
 EPSILON = .1
-TEMPRETURE = 5
+TEMPRETURE = 1
 GAMMA = .99
 INITIAL_LEARNING_RATE = 1
-MIN_LEARNING_RATE = 1E-6
+MIN_LEARNING_RATE = 1E-3
 NUM_EPISODES = 100000
-NUM_ROWS = 2
-NUM_COLUMNS = 2
+NUM_ROWS = 3
+NUM_COLUMNS = 3
 
 
 
@@ -76,6 +64,7 @@ class Tri:
                 child = node()
                 current_node._children[index] = child
                 node_buffer.append(child)
+                self._num_terminals+=1
 
         terminal = node_buffer.pop()
         #if not terminal.get_utility_val():
@@ -104,6 +93,7 @@ class Tri:
                 child = node()
                 current_node._children[index] = child
                 node_buffer.append(child)
+                self._num_terminals+=1
 
         terminal = node_buffer.pop()
         if not terminal.get_utility_val():terminal.set_utility_val(self._init_state_val)
@@ -120,7 +110,6 @@ def get_possible_states(current_state):
         state[possible_index] = 1
         possible_states.append(state)
     return (possible_states)
-
 
 def one_shot_play(current_state,game_tri,tempreture,agent_type):
     """
@@ -139,24 +128,10 @@ def one_shot_play(current_state,game_tri,tempreture,agent_type):
     for p in possible_states:
         terminal = game_tri.get_state_value(p)
         state_vals.append(terminal.get_utility_val())
-
         if agent_type==agent.TD:
             probs.append(np.exp(terminal.get_utility_val()/tempreture))
         elif agent_type==agent.RANDOM:
             probs.append(1)
-
-        probs.append(np.exp(terminal.get_utility_val()/tempreture))
-
-    #Normalize state values
-    state_vals = np.array(state_vals)/sum(state_vals)
-    #probs = np.array(probs)/(len(probs)-1)
-    #Use Epsilon-greedy to choose a new state
-    #max_val = max(state_vals)
-    #for idx, val in enumerate(state_vals):
-     #   if val==max_val:
-      #      probs[idx] = 1-EPSILON
-       # else:
-        #    probs[idx] = EPSILON
 
     #Normalize probabilities
     probs = np.array(probs)/sum(probs)
@@ -198,12 +173,11 @@ def td1_learner(backups,reward,episode_index):
         new_util = old_util + learning_rate*(r+GAMMA*next_state_val-old_util)
         backups[index].set_utility_val(new_util)
 
-
 def play_game(num_rows,num_columns,game_tri,tempreture,player_to_update,agent_type):
     # Launch the game-engine
     engine = GameEngine((num_rows, num_columns), (0, 1))
     # Initialize board state
-    current_state = [0] * 12
+    current_state = [0] * ((2*NUM_ROWS*NUM_COLUMNS) + NUM_ROWS + NUM_COLUMNS)
     # form backups
     backups = []
     while True:
@@ -228,6 +202,7 @@ def play_game(num_rows,num_columns,game_tri,tempreture,player_to_update,agent_ty
     scores = []
     scores.append(engine.get_score(0))
     scores.append(engine.get_score(1))
+    #print(scores)
 
     # Determine reward
     if scores[player_to_update] > scores[abs(1 - player_to_update)]:
@@ -243,8 +218,8 @@ if __name__=="__main__":
     #1) total reward against random player
     #2) some state values evolution
 
-    sample_state1 = [1,0,1,1,0,0,0,0,0,0,0,0]
-    sample_state2 = [1,0,1,1,0,1,0,0,0,0,0,0]
+    #sample_state1 = [1,0,1,1,1,0,0,0,0,0,0,0]
+    #sample_state2 = [1,0,1,1,0,1,0,0,0,0,0,0]
 
     #Initialize game_tri
 
@@ -258,16 +233,17 @@ if __name__=="__main__":
     player_to_update = 0
     #Main loop over all the episodes
     for episode_index in range(0,NUM_EPISODES):
-        tempreture = gen_learning_rate(episode_index,TEMPRETURE,.1,NUM_EPISODES) #slighty decay the tempreture
+        tempreture = gen_learning_rate(episode_index,TEMPRETURE,.01,50000) #slighty decay the tempreture
+        tempreture = 5
         #randomly choose one player
         if random.random()<.5:player_to_update=1-player_to_update
         #get reward and backups
         reward,backups = play_game(NUM_ROWS,NUM_COLUMNS,game_tri,tempreture,player_to_update,agent.TD)
         #TD-1 learner
         td1_learner(backups,reward,episode_index)
-        if episode_index%500==0:
-            state_saver1.append(game_tri.get_state_value(sample_state1).get_utility_val())
-            state_saver2.append(game_tri.get_state_value(sample_state2).get_utility_val())
+        if episode_index%1000==0:
+            #state_saver1.append(game_tri.get_state_value(sample_state1).get_utility_val())
+            #state_saver2.append(game_tri.get_state_value(sample_state2).get_utility_val())
             #play against a random-player
             total_reward = 0
             test_player_index = 0
@@ -276,7 +252,10 @@ if __name__=="__main__":
                 reward, backups = play_game(NUM_ROWS, NUM_COLUMNS, game_tri, .01, test_player_index, agent.RANDOM)
                 total_reward+= reward
             reward_saver.append(total_reward)
-            print(episode_index)
+            print(reward_saver[-1])
+            #print(episode_index)
+
+        #if episode_index%10000==0: print(reward_saver[-1])
 
     #plot some results
     plt1, = plt.plot(range(1,len(reward_saver)+1),reward_saver,"k--",linewidth = 2)
@@ -293,73 +272,7 @@ if __name__=="__main__":
     plt.grid(True)
     plt.show()
 
-=======
-if __name__=="__main__":
 
-    #Initialize game_tri
-    game_tri = Tri(2,2)
->>>>>>> Stashed changes
-
-    #Initial state
-    rewards = []
-    reward_saver = []
-
-    player_to_update = 0
-    for episode_index in range(0,NUM_EPISODES):
-        tempreture = gen_learning_rate(episode_index,TEMPRETURE,.01,NUM_EPISODES)
-        #choose the player for training
-        #if episode_index%1000==0 and episode_index>0:
-         #   player_to_update = 1-player_to_update
-
-        if random.random()<.5:
-            player_to_update=0
-        else:
-            player_to_update = 1
-
-        #print(player_to_update)
-
-        # Launch the game-engine
-        engine = GameEngine((2, 2), (0, 1))
-        current_state  = [0]*12
-        backups = {}
-
-        game_condition = True
-        while game_condition:
-            player_index = engine.get_current_player()
-            line_index = one_shot_play(current_state,game_tri,tempreture)
-            engine.select_edge(line_index,player_index)
-            if engine.is_game_finished():
-                game_condition = False
-                break
-            current_state = engine.get_board_state()
-
-            if not backups.has_key(player_index): backups[player_index] = []
-            backups[player_index].append(game_tri.get_state_value(current_state)) #store all the terminals
-
-
-        #Get the final reward
-        scores = []
-        scores.append(engine.get_score(0))
-        scores.append(engine.get_score(1))
-
-        #Determine reward
-        if scores[player_to_update]>scores[abs(1-player_to_update)]:
-            reward = 1
-        else:
-            reward = 0
-
-        if episode_index%500==0 and episode_index>0:
-            reward_saver.append(sum(rewards))
-            print(episode_index,tempreture,sum(rewards))
-            rewards = []
-            #print(reward_saver)
-        else:
-            rewards.append(reward)
-
-
-        #TD-1 learner
-        td1_learner(backups[player_to_update],reward,episode_index)
-        #td1_learner(backups[1-player_to_update], 1-reward, episode_index)
 
 
 
