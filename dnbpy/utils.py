@@ -16,6 +16,19 @@ full_data_index = 0
 ###################
 
 
+class quadruple:
+    def __init__(self,current_state,next_state,reward,action):
+        self.s_t = current_state
+        self.s_t_1 = next_state
+        self.reward = reward
+        self.action = action
+
+    def get_s_t(self): return (self.s_t)
+    def get_s_t_1(self): return (self.s_t_1)
+    def get_reward(self): return (self.reward)
+    def get_action(self): return (self.action)
+
+
 def reset_data_indexes():
     global train_data_index
     train_data_index = 0
@@ -102,6 +115,14 @@ def generate_train_validation_form_fold(fold_index, fold_train_df):
     :param fold_train_df:
     :return:
     """
+
+
+    if fold_index!=-1:
+        all_train_instances = fold_train_df[:fold_index] + fold_train_df[(fold_index + 1):]
+    else:
+        all_train_instances = fold_train_df
+
+
     all_train_instances = fold_train_df[:fold_index] + fold_train_df[(fold_index + 1):]
     empty_df = pd.DataFrame()
     for x in all_train_instances:
