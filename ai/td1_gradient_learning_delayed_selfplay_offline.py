@@ -56,6 +56,7 @@ for episode_num in range(1, num_episodes + 1):
     if episode_num % 500 == 0:
         # policy.print_gradients()
         # play against random opponent
+        policy.set_epsilon(0.0)
         results = {'won': 0, 'lost': 0, 'tied': 0}
         for trial in range(500):
             players = ['policy', 'random']
@@ -80,5 +81,5 @@ for episode_num in range(1, num_episodes + 1):
             else:
                 results['tied'] += 1
         print("%s, %s, %s, %s (%s, %s)" % (episode_num, results['won'], results,
-                                           len(unique_states_visited), policy.get_epsilon(), policy.get_learning_rate()))
+                                           len(unique_states_visited), eps, lr))
 

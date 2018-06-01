@@ -1,5 +1,6 @@
 from ai import *
 from dnbpy import *
+from util.state_space_metrics import *
 
 board_size = (2, 2)
 num_episodes = 100000
@@ -29,6 +30,7 @@ def compute_reward(game, player_to_update):
     return 0.0
 
 unique_states_visited = set()
+state_space_metrics = StateSpaceMetrics(board_size)
 for episode_num in range(1, num_episodes + 1):
     eps = gen_rate(episode_num, epsilon, min_epsilon, num_episodes)
     lr = gen_rate(episode_num, learning_rate, min_learning_rate, num_episodes)
@@ -48,12 +50,14 @@ for episode_num in range(1, num_episodes + 1):
             if not game.is_finished():
                 backups_p1.append(game.get_board_state())
             unique_states_visited.add(as_string(game.get_board_state()))
+            state_space_metrics.state_visited(as_string(game.get_board_state()))
         else:
             edge = policy.select_edge(board_state)
             current_player, _ = game.select_edge(edge, 1)
             if not game.is_finished():
                 backups_p2.append(game.get_board_state())
             unique_states_visited.add(as_string(game.get_board_state()))
+            state_space_metrics.state_visited(as_string(game.get_board_state()))
 
     reward = compute_reward(game, 0)
     policy.update_value(reward, backups_p1)
@@ -62,6 +66,7 @@ for episode_num in range(1, num_episodes + 1):
     # analyze results
     if episode_num % 500 == 0:
         # play against random opponent
+        policy.set_epsilon(0.0)
         results = {'won': 0, 'lost': 0, 'tied': 0}
         for trial in range(500):
             players = ['policy', 'random']
@@ -87,6 +92,8 @@ for episode_num in range(1, num_episodes + 1):
                 results['tied'] += 1
         vt = policy.get_value_table()
         print("%s, %s, %s, %s, %s (%s, %s)" % (episode_num, results['won'], results, len([x for x in vt if vt[x] > 0.0 ]),
-                                      len(unique_states_visited), policy.get_epsilon(), policy.get_learning_rate()))
+                                      len(unique_states_visited), eps, lr))
 
 print(policy.get_value_table())
+print(state_space_metrics.get_state_visitation_counts())
+state_space_metrics.plot_state_visitation_count_heatmap([64, 64])

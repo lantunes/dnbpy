@@ -1,14 +1,15 @@
 import ast
 import itertools
 import random
+import numpy as np
 
 from dnbpy import *
 
 
 class TabularPolicy(Policy):
-    def __init__(self, board_size, epsilon, initial_state_value, table_file_path=None, existing_value_table=None):
+    def __init__(self, board_size, initial_state_value, epsilon=0.0, table_file_path=None, existing_value_table=None,
+                 softmax_action=False, temperature=0.0):
         """
-        
         :param board_size: 
         :param epsilon: a scalar, from 0.0 to 1.0, that is the value used for epsilon-greedy action selection; a value
                         of 0.0 should be used for a completely greedy policy (i.e. a policy that always selects 
@@ -17,6 +18,8 @@ class TabularPolicy(Policy):
         """
         self._board_size = board_size
         self._epsilon = epsilon
+        self._softmax_action = softmax_action
+        self._temperature = temperature
         if table_file_path is not None:
             self._value_table = self._init_value_table_from_file(table_file_path)
             self._symmetric_states = self._rebuild_symmetric_states(board_size)
@@ -71,6 +74,26 @@ class TabularPolicy(Policy):
         return state_string
 
     def select_edge(self, board_state):
+        if self._softmax_action:
+            return self._select_edge_softmax(board_state)
+        else:
+            return self._select_edge_epsilon_greedily(board_state)
+
+    def _select_edge_softmax(self, board_state):
+        softmax = lambda x, T : np.exp(x/T)/np.sum(np.exp(x/T))
+        zero_indices = []
+        for i in range(len(board_state)):
+            if board_state[i] == 0:
+                zero_indices.append(i)
+        new_state_values = []
+        for zero_index in zero_indices:
+            new_state = [x for x in board_state]
+            new_state[zero_index] = 1
+            new_state_string = self._find_state_string(new_state)
+            new_state_values.append(self._value_table[new_state_string])
+        return zero_indices[np.argmax(np.random.multinomial(1, softmax(np.array(new_state_values), self._temperature)))]
+
+    def _select_edge_epsilon_greedily(self, board_state):
         zero_indices = []
         for i in range(len(board_state)):
             if board_state[i] == 0:
@@ -98,3 +121,12 @@ class TabularPolicy(Policy):
 
     def set_epsilon(self, eps):
         self._epsilon = eps
+
+    def get_temperature(self):
+        return self._temperature
+
+    def set_temperature(self, temp):
+        self._temperature = temp
+
+    def set_softmax_action(self, is_softmax_action):
+        self._softmax_action = is_softmax_action

@@ -25,9 +25,9 @@ class TDOneGradientPolicyCNN(Policy):
         self._sum_conv2d_kernel = tf.placeholder("float", shape=[3, 3, 1, 12], name="sum_conv2d_kernel")
         self._sum_conv2d_bias = tf.placeholder("float", shape=[12], name="sum_conv2d_bias")
 
-        self._W_in = tf.Variable(tf.random_uniform([3 * 3 * 12, self._n_hidden], -1, 1), name="W_in")
-        self._b_in = tf.Variable(tf.random_normal([self._n_hidden]), name="b_in")
-        self._W_out = tf.Variable(tf.random_normal([self._n_hidden, self._n_output]), name="W_out")
+        self._W_in = tf.Variable(tf.random_normal([3 * 3 * 12, self._n_hidden], 0.0, 0.1), name="W_in")
+        self._b_in = tf.Variable(tf.zeros([self._n_hidden]), name="b_in")
+        self._W_out = tf.Variable(tf.random_normal([self._n_hidden, self._n_output], 0.0, 0.1), name="W_out")
 
         self._input_reshaped = tf.reshape(self._input, shape=[1, self._n_input_rows, self._n_input_cols, 1])
 
@@ -41,6 +41,7 @@ class TDOneGradientPolicyCNN(Policy):
             filters=12,
             kernel_size=[3, 3],
             strides=(1, 1),
+            kernel_initializer=tf.random_normal_initializer(0.0, 0.1),
             activation=tf.nn.relu)
 
         self._conv_flat = tf.reshape(self._conv, [1, 3 * 3 * 12])
@@ -70,6 +71,34 @@ class TDOneGradientPolicyCNN(Policy):
         self._prediction_gradient_history = []
 
     def select_edge(self, board_state):
+        if self._softmax_action:
+            return self._select_edge_softmax(board_state)
+        else:
+            return self._select_edge_epsilon_greedily(board_state)
+
+    def _select_edge_softmax(self, board_state):
+        softmax = lambda x, T : np.exp(x/T)/np.sum(np.exp(x/T))
+        zero_indices = []
+        for i in range(len(board_state)):
+            if board_state[i] == 0:
+                zero_indices.append(i)
+        new_state_values = []
+        new_state_gradients = []
+        for zero_index in zero_indices:
+            new_state = [x for x in board_state]
+            new_state[zero_index] = 1
+            new_state = convert_board_state_to_edge_matrix(self._board_size, new_state)
+            new_state_value, gradients = self._sess.run([self._prediction, self._gradients],
+                                                        feed_dict={self._input: new_state})
+            new_state_values.append(new_state_value[0][0])
+            new_state_gradients.append(gradients)
+        selected_index = np.argmax(np.random.multinomial(1, softmax(np.array(new_state_values), self._temperature)))
+        if self._store_history:
+            self._prediction_history.append(new_state_values[selected_index])
+            self._prediction_gradient_history.append(new_state_gradients[selected_index])
+        return zero_indices[selected_index]
+
+    def _select_edge_epsilon_greedily(self, board_state):
         zero_indices = []
         for i in range(len(board_state)):
             if board_state[i] == 0:
@@ -118,6 +147,18 @@ class TDOneGradientPolicyCNN(Policy):
 
     def set_learning_rate(self, lr):
         self._learning_rate = lr
+
+    def get_temperature(self):
+        return self._temperature
+
+    def set_temperature(self, temp):
+        self._temperature = temp
+
+    def is_softmax_action(self):
+        return self._softmax_action
+
+    def set_softmax_action(self, is_softmax_action):
+        self._softmax_action = is_softmax_action
 
     def update(self):
         if len(self._prediction_history) > 1:

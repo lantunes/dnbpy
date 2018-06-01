@@ -9,7 +9,7 @@ epsilon = 0.18
 print("initializing value table for (%s, %s) game..." % (board_size[0], board_size[1]))
 
 p1 = TDZeroPolicy(board_size=board_size, epsilon=epsilon, learning_rate=learning_rate, gamma=gamma,
-                      initial_state_value=0.0)
+                  initial_state_value=0.0)
 random_policy = RandomPolicy()
 
 

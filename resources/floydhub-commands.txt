@@ -1,0 +1,1 @@
+floyd run --env tensorflow --cpu 'python -m ai.td1_gradient_learning_delayed_selfplay_online_cnn.py'

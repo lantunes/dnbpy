@@ -5,7 +5,7 @@ board_size = (2, 2)
 num_episodes = 100000
 learning_rate = 0.5
 min_learning_rate = 0.05
-epsilon = 0.6
+epsilon = 0.99
 min_epsilon = 0.01
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
@@ -60,6 +60,7 @@ for episode_num in range(1, num_episodes + 1):
     if episode_num % 500 == 0:
         # policy.print_gradients()
         # play against random opponent
+        policy.set_epsilon(0.0)
         results = {'won': 0, 'lost': 0, 'tied': 0}
         for trial in range(500):
             players = ['policy', 'random']
@@ -84,5 +85,5 @@ for episode_num in range(1, num_episodes + 1):
             else:
                 results['tied'] += 1
         print("%s, %s, %s, %s (%s, %s)" % (episode_num, results['won'], results,
-                                           len(unique_states_visited), policy.get_epsilon(), policy.get_learning_rate()))
+                                           len(unique_states_visited), eps, lr))
 

@@ -2,8 +2,9 @@ from ai import *
 
 
 class TDZeroPolicy(TabularPolicy):
-    def __init__(self, board_size, epsilon, learning_rate, gamma, initial_state_value=0.0, table_file_path=None):
-        super(TDZeroPolicy, self).__init__(board_size, epsilon, initial_state_value, table_file_path)
+    def __init__(self, board_size, learning_rate=0.0, gamma=0.0, epsilon=0.0, initial_state_value=0.0, table_file_path=None):
+        super(TDZeroPolicy, self).__init__(board_size=board_size, epsilon=epsilon,
+                                           initial_state_value=initial_state_value, table_file_path=table_file_path)
         self._learning_rate = learning_rate
         self._gamma = gamma
 
