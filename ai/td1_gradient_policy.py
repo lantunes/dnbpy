@@ -41,6 +41,34 @@ class TDOneGradientPolicy(Policy):
         self._prediction_gradient_history = []
 
     def select_edge(self, board_state):
+        if self._softmax_action:
+            return self._select_edge_softmax(board_state)
+        else:
+            return self._select_edge_epsilon_greedily(board_state)
+
+    def _select_edge_softmax(self, board_state):
+        softmax = lambda x, T : np.exp(x/T)/np.sum(np.exp(x/T))
+        zero_indices = []
+        for i in range(len(board_state)):
+            if board_state[i] == 0:
+                zero_indices.append(i)
+        new_state_values = []
+        new_state_gradients = []
+        for zero_index in zero_indices:
+            new_state = [x for x in board_state]
+            new_state[zero_index] = 1
+            new_state = np.reshape(new_state, (1, len(new_state)))
+            new_state_value, gradients = self._sess.run([self._prediction, self._gradients],
+                                                        feed_dict={self._input: new_state})
+            new_state_values.append(new_state_value[0][0])
+            new_state_gradients.append(gradients)
+        selected_index = np.argmax(np.random.multinomial(1, softmax(np.array(new_state_values), self._temperature)))
+        if self._store_history:
+            self._prediction_history.append(new_state_values[selected_index])
+            self._prediction_gradient_history.append(new_state_gradients[selected_index])
+        return zero_indices[selected_index]
+
+    def _select_edge_epsilon_greedily(self, board_state):
         zero_indices = []
         for i in range(len(board_state)):
             if board_state[i] == 0:
@@ -89,6 +117,18 @@ class TDOneGradientPolicy(Policy):
 
     def set_learning_rate(self, lr):
         self._learning_rate = lr
+
+    def get_temperature(self):
+        return self._temperature
+
+    def set_temperature(self, temp):
+        self._temperature = temp
+
+    def is_softmax_action(self):
+        return self._softmax_action
+
+    def set_softmax_action(self, is_softmax_action):
+        self._softmax_action = is_softmax_action
 
     def update(self):
         if len(self._prediction_history) > 1:
