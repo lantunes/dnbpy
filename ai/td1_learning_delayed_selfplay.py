@@ -1,20 +1,25 @@
 from ai import *
 from dnbpy import *
 from util.state_space_metrics import *
+from util.helper_functions import *
 
 board_size = (2, 2)
-num_episodes = 100000
+num_episodes = 300000
 learning_rate = 1.0
 min_learning_rate = 1e-6
 gamma = 0.99
-epsilon = 0.6
-min_epsilon = 0.01
+epsilon = 0.99
+min_epsilon = 0.99
 
 print("initializing value table for (%s, %s) game..." % (board_size[0], board_size[1]))
 
 policy = TDOnePolicy(board_size=board_size, epsilon=epsilon, learning_rate=learning_rate, gamma=gamma,
                  initial_state_value=lambda: random.random())
 random_policy = RandomPolicy()
+
+print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward='delayed',
+           updates='offline', learning_rate=learning_rate, min_learning_rate=min_learning_rate, epsilon=epsilon,
+           min_epsilon=min_epsilon)
 
 
 def gen_rate(iteration,l_max,l_min,N_max):

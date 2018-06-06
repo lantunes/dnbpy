@@ -3,11 +3,11 @@ from dnbpy import *
 from util.helper_functions import *
 
 board_size = (2, 2)
-num_episodes = 200000
-learning_rate = 0.05
-min_learning_rate = 0.05
-epsilon = 0.6
-min_epsilon = 0.01
+num_episodes = 100000
+learning_rate = 0.005
+min_learning_rate = 0.0001
+epsilon = 0.99
+min_epsilon = 0.05
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
@@ -15,7 +15,9 @@ policy = TDOneGradientPolicyCNN(board_size=board_size)
 policy.set_softmax_action(False)
 random_policy = RandomPolicy()
 
-print_info(board_size, num_episodes, learning_rate, min_learning_rate, epsilon, min_epsilon, policy)
+print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward='delayed',
+           updates='online', learning_rate=learning_rate, min_learning_rate=min_learning_rate, epsilon=epsilon,
+           min_epsilon=min_epsilon)
 
 
 def gen_rate(iteration,l_max,l_min,N_max):

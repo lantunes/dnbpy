@@ -92,7 +92,8 @@ class TDOneGradientPolicyCNN(Policy):
                                                         feed_dict={self._input: new_state})
             new_state_values.append(new_state_value[0][0])
             new_state_gradients.append(gradients)
-        selected_index = np.argmax(np.random.multinomial(1, softmax(np.array(new_state_values), self._temperature)))
+        choices = range(len(new_state_values))
+        selected_index = np.random.choice(choices, p=softmax(np.array(new_state_values), self._temperature))
         if self._store_history:
             self._prediction_history.append(new_state_values[selected_index])
             self._prediction_gradient_history.append(new_state_gradients[selected_index])
