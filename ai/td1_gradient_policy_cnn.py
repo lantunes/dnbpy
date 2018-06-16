@@ -66,6 +66,9 @@ class TDOneGradientPolicyCNN(Policy):
 
         self.reset_history()
 
+    def get_architecture(self):
+        return "5x5-conv(3x3, relu, 12)-tanh(300)-sigmoid(1)"
+
     def reset_history(self):
         self._prediction_history = []
         self._prediction_gradient_history = []
@@ -209,8 +212,16 @@ class TDOneGradientPolicyCNN(Policy):
                                           self._sum_conv2d_bias: sum_conv2d_bias})
 
     def print_params(self):
-        params = self._sess.run([self._W_in, self._b_in, self._W_out, self._conv2d_kernel, self._conv2d_bias])
-        print(params)
+        params = self._sess.run([self._W_in])
+        print("W_in: %s" % params[0].tolist())
+        params = self._sess.run([self._b_in])
+        print("b_in: %s" % params[0].tolist())
+        params = self._sess.run([self._W_out])
+        print("W_out: %s" % params[0].tolist())
+        params = self._sess.run([self._conv2d_kernel])
+        print("conv2d_kernel: %s" % params[0].tolist())
+        params = self._sess.run([self._conv2d_bias])
+        print("conv2d_bias: %s" % params[0].tolist())
 
     def print_gradients(self):
         print(self._prediction_gradient_history)

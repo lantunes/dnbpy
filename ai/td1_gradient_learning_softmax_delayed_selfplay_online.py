@@ -17,7 +17,7 @@ random_policy = RandomPolicy()
 
 print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward='delayed',
            updates='online', learning_rate=learning_rate, min_learning_rate=min_learning_rate, temperature=temperature,
-           min_temperature=min_temperature)
+           min_temperature=min_temperature, architecture=policy.get_architecture())
 
 
 def gen_rate(iteration,l_max,l_min,N_max):
@@ -93,4 +93,4 @@ for episode_num in range(1, num_episodes + 1):
                 results['tied'] += 1
         print("%s, %s, %s, %s (%s, %s)" % (episode_num, results['won'], results,
                                            len(unique_states_visited), tmp, lr))
-
+policy.print_params()

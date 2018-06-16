@@ -4,40 +4,36 @@ import tensorflow as tf
 import numpy as np
 
 
-class TDOneGradientPolicyV2(Policy):
+class TDOneGradientLinearPolicyV2(Policy):
     def __init__(self, board_size):
         self._sess = tf.Session()
         self._board_size = board_size
 
         self._n_input = len(init_board_state(board_size))
-        self._n_hidden = 300
         self._n_output = 1
 
         self._input = tf.placeholder("float", [1, self._n_input], name="input")
         self._target = tf.placeholder("float", [1, self._n_output], name="target")
         self._error = tf.placeholder("float", shape=[], name="error")
         self._lr = tf.placeholder("float", shape=[], name="learning_rate")
-        self._sum_grad_W_in = tf.placeholder("float", shape=[self._n_input, self._n_hidden], name="sum_grad_W_in")
-        self._sum_grad_W_out = tf.placeholder("float", shape=[self._n_hidden, self._n_output], name="sum_grad_W_out")
+        self._sum_grad_W = tf.placeholder("float", shape=[self._n_input, self._n_output], name="sum_grad_W_in")
 
-        self._W_in = tf.Variable(tf.random_uniform([self._n_input, self._n_hidden], -1, 1), name="W_in")
-        self._W_out = tf.Variable(tf.random_normal([self._n_hidden, self._n_output]), name="W_out")
+        # self._W = tf.Variable(tf.random_normal([self._n_input, self._n_output]), name="W_out")
+        self._W = tf.Variable(tf.random_uniform([self._n_input, self._n_output], minval=-1, maxval=1), name="W_out")
 
-        input_layer = tf.nn.tanh(tf.matmul(self._input, self._W_in))
+        self._prediction = tf.nn.sigmoid(tf.matmul(self._input, self._W))
+        # self._prediction = tf.matmul(self._input, self._W)
 
-        self._prediction = tf.nn.sigmoid(tf.matmul(input_layer, self._W_out))
+        self._gradients = tf.gradients(self._prediction, [self._W])
 
-        self._gradients = tf.gradients(self._prediction, [self._W_in, self._W_out])
-
-        self._update_W_in = self._W_in.assign(self._W_in + self._lr * self._error * self._sum_grad_W_in)
-        self._update_W_out = self._W_out.assign(self._W_out + self._lr * self._error * self._sum_grad_W_out)
+        self._update_W = self._W.assign(self._W + self._lr * self._error * self._sum_grad_W)
 
         self._sess.run(tf.global_variables_initializer())
 
         self.reset_history_buffer()
 
     def get_architecture(self):
-        return "12-tanh(300)-sigmoid(1)"
+        return "12-sigmoid(1)"
 
     def reset_history_buffer(self):
         self._prediction_buffer = []
@@ -69,7 +65,7 @@ class TDOneGradientPolicyV2(Policy):
             return random_index
         else:
             best_value = 0.0
-            best_value_gradient = None
+            best_value_gradient = [np.zeros(shape=(self._n_input, 1))]
             best_state_index = zero_indices[0]
             for zero_index in zero_indices:
                 new_state = [x for x in board_state]
@@ -77,12 +73,13 @@ class TDOneGradientPolicyV2(Policy):
                 new_state = np.reshape(new_state, (1, len(new_state)))
                 new_state_value, gradients = self._sess.run([self._prediction, self._gradients],
                                                             feed_dict={self._input: new_state})
+                new_state_value = new_state_value[0][0]
                 if new_state_value >= best_value:
                     best_value = new_state_value
                     best_value_gradient = gradients
                     best_state_index = zero_index
             # store history
-            self._prediction_buffer.append(best_value[0][0])
+            self._prediction_buffer.append(best_value)
             self._prediction_gradient_buffer.append(best_value_gradient)
             return best_state_index
 
@@ -101,19 +98,15 @@ class TDOneGradientPolicyV2(Policy):
     def update(self, prediction_history, prediction_gradient_history):
         if len(prediction_history) > 1:
             error = prediction_history[-1] - prediction_history[-2]
-            sum_grad_W_in = np.sum(prediction_gradient_history[:-1], axis=0)[0]
-            sum_grad_W_out = np.sum(prediction_gradient_history[:-1], axis=0)[1]
-            self._sess.run([self._update_W_in, self._update_W_out],
-                           feed_dict={self._lr: self._learning_rate, self._error: error,
-                                      self._sum_grad_W_in: sum_grad_W_in, self._sum_grad_W_out: sum_grad_W_out})
+            sum_grad_W = np.sum(prediction_gradient_history[:-1], axis=0)[0]
+            self._sess.run([self._update_W],
+                           feed_dict={self._lr: self._learning_rate, self._error: error, self._sum_grad_W: sum_grad_W})
 
     def update_terminal(self, prediction_history, prediction_gradient_history, target):
         error = target - prediction_history[-1]
-        sum_grad_W_in = np.sum(prediction_gradient_history, axis=0)[0]
-        sum_grad_W_out = np.sum(prediction_gradient_history, axis=0)[1]
-        self._sess.run([self._update_W_in, self._update_W_out],
-                       feed_dict={self._lr: self._learning_rate, self._error: error,
-                                  self._sum_grad_W_in: sum_grad_W_in, self._sum_grad_W_out: sum_grad_W_out})
+        sum_grad_W = np.sum(prediction_gradient_history, axis=0)[0]
+        self._sess.run([self._update_W],
+                       feed_dict={self._lr: self._learning_rate, self._error: error, self._sum_grad_W: sum_grad_W})
 
     def update_offline(self, prediction_history, prediction_gradient_history, target):
         if len(prediction_history) > 0:
@@ -121,17 +114,13 @@ class TDOneGradientPolicyV2(Policy):
                 prev = prediction_history[i - 1]
                 last = prediction_history[i] if i < len(prediction_history) else target
                 error = last - prev
-                sum_grad_W_in = np.sum(prediction_gradient_history[:i], axis=0)[0]
-                sum_grad_W_out = np.sum(prediction_gradient_history[:i], axis=0)[1]
-                self._sess.run([self._update_W_in, self._update_W_out],
-                               feed_dict={self._lr: self._learning_rate, self._error: error,
-                                          self._sum_grad_W_in: sum_grad_W_in, self._sum_grad_W_out: sum_grad_W_out})
+                sum_grad_W = np.sum(prediction_gradient_history[:i], axis=0)[0]
+                self._sess.run([self._update_W],
+                               feed_dict={self._lr: self._learning_rate, self._error: error, self._sum_grad_W: sum_grad_W})
 
     def print_params(self):
-        params = self._sess.run([self._W_in])
-        print("W_in: %s" % params[0].tolist())
-        params = self._sess.run([self._W_out])
-        print("W_out: %s" % params[0].tolist())
+        params = self._sess.run([self._W])
+        print(np.reshape(params[0], [1, self._n_input]).tolist())
 
     def print_gradients(self):
         print(self._prediction_gradient_buffer)

@@ -36,6 +36,9 @@ class TDOneGradientPolicy(Policy):
 
         self.reset_history()
 
+    def get_architecture(self):
+        return "12-tanh(300)-sigmoid(1)"
+
     def reset_history(self):
         self._prediction_history = []
         self._prediction_gradient_history = []
@@ -160,8 +163,10 @@ class TDOneGradientPolicy(Policy):
                                           self._sum_grad_W_in: sum_grad_W_in, self._sum_grad_W_out: sum_grad_W_out})
 
     def print_params(self):
-        params = self._sess.run([self._W_in, self._W_out])
-        print(params)
+        params = self._sess.run([self._W_in])
+        print("W_in: %s" % params[0].tolist())
+        params = self._sess.run([self._W_out])
+        print("W_out: %s" % params[0].tolist())
 
     def print_gradients(self):
         print(self._prediction_gradient_history)

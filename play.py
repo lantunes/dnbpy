@@ -32,8 +32,8 @@ def main():
     td0 = ai.TDZeroPolicy((board_rows, board_cols), learning_rate=0.0, gamma=0.0,
                           table_file_path='resources/td0_2x2_0.28_0.01_0.99_immediate_reward.txt')
 
-    td1 = ai.TDOnePolicy((board_rows, board_cols), learning_rate=0.0, gamma=0.0,
-                         table_file_path='resources/td1_2x2_0.6_1.0_0.99_delayed_selfplay100k.txt')
+    td1 = ai.TDOneTabularPolicy((board_rows, board_cols), learning_rate=0.0, gamma=0.0,
+                                table_file_path='resources/td1_2x2_0.6_1.0_0.99_delayed_selfplay100k.txt')
 
     game = dnbpy.Game((board_rows, board_cols), players)
     print(game)
