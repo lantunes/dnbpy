@@ -118,9 +118,9 @@ class TDOneGradientLinearPolicyV2(Policy):
                 self._sess.run([self._update_W],
                                feed_dict={self._lr: self._learning_rate, self._error: error, self._sum_grad_W: sum_grad_W})
 
-    def print_params(self):
+    def print_params(self, f):
         params = self._sess.run([self._W])
-        print(np.reshape(params[0], [1, self._n_input]).tolist())
+        f.write(np.reshape(params[0], [1, self._n_input]).tolist())
 
     def print_gradients(self):
         print(self._prediction_gradient_buffer)

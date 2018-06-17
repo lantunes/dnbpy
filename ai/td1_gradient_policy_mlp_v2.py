@@ -145,15 +145,15 @@ class TDOneGradientPolicyMLPV2(Policy):
                                   self._sum_grad_W3: sum_grad_W3,
                                   self._sum_grad_W_out: sum_grad_W_out})
 
-    def print_params(self):
+    def print_params(self, f):
         params = self._sess.run([self._W1])
-        print("W1: %s" % params[0].tolist())
+        f.write("W1: %s\n" % params[0].tolist())
         params = self._sess.run([self._W2])
-        print("W2: %s" % params[0].tolist())
+        f.write("W2: %s\n" % params[0].tolist())
         params = self._sess.run([self._W3])
-        print("W3: %s" % params[0].tolist())
+        f.write("W3: %s\n" % params[0].tolist())
         params = self._sess.run([self._W_out])
-        print("W_out: %s" % params[0].tolist())
+        f.write("W_out: %s\n" % params[0].tolist())
 
     def print_gradients(self):
         print(self._prediction_gradient_buffer)

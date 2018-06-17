@@ -211,17 +211,17 @@ class TDOneGradientPolicyCNN(Policy):
                                           self._sum_grad_W_out: sum_grad_W_out, self._sum_conv2d_kernel: sum_conv2d_kernel,
                                           self._sum_conv2d_bias: sum_conv2d_bias})
 
-    def print_params(self):
+    def print_params(self, f):
         params = self._sess.run([self._W_in])
-        print("W_in: %s" % params[0].tolist())
+        f.write("W_in: %s\n" % params[0].tolist())
         params = self._sess.run([self._b_in])
-        print("b_in: %s" % params[0].tolist())
+        f.write("b_in: %s\n" % params[0].tolist())
         params = self._sess.run([self._W_out])
-        print("W_out: %s" % params[0].tolist())
+        f.write("W_out: %s\n" % params[0].tolist())
         params = self._sess.run([self._conv2d_kernel])
-        print("conv2d_kernel: %s" % params[0].tolist())
+        f.write("conv2d_kernel: %s\n" % params[0].tolist())
         params = self._sess.run([self._conv2d_bias])
-        print("conv2d_bias: %s" % params[0].tolist())
+        f.write("conv2d_bias: %s\n" % params[0].tolist())
 
     def print_gradients(self):
         print(self._prediction_gradient_history)

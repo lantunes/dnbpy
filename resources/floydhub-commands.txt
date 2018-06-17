@@ -1,1 +1,1 @@
-floyd run --env tensorflow --cpu2 'python -m ai.td1_gradient_learning_delayed_selfplay_offline_mlp_v2'
+floyd run --env tensorflow --cpu2 'python -m ai.td1_gradient_learning_softmax_delayed_selfplay_online_cnn -b /output/'

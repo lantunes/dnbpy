@@ -162,11 +162,11 @@ class TDOneGradientPolicy(Policy):
                                feed_dict={self._lr: self._learning_rate, self._error: error,
                                           self._sum_grad_W_in: sum_grad_W_in, self._sum_grad_W_out: sum_grad_W_out})
 
-    def print_params(self):
+    def print_params(self, f):
         params = self._sess.run([self._W_in])
-        print("W_in: %s" % params[0].tolist())
+        f.write("W_in: %s\n" % params[0].tolist())
         params = self._sess.run([self._W_out])
-        print("W_out: %s" % params[0].tolist())
+        f.write("W_out: %s\n" % params[0].tolist())
 
     def print_gradients(self):
         print(self._prediction_gradient_history)
