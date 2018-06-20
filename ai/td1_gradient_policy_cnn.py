@@ -13,38 +13,39 @@ class TDOneGradientPolicyCNN(Policy):
         self._n_input_rows = edge_matrix.shape[0]
         self._n_input_cols = edge_matrix.shape[1]
         self._n_hidden = 300
+        self._n_filters = 12
         self._n_output = 1
 
         self._input = tf.placeholder("float", [self._n_input_rows, self._n_input_cols], name="input")
         self._target = tf.placeholder("float", [1, self._n_output], name="target")
         self._error = tf.placeholder("float", shape=[], name="error")
         self._lr = tf.placeholder("float", shape=[], name="learning_rate")
-        self._sum_grad_W_in = tf.placeholder("float", shape=[108, 300], name="sum_grad_W_in")
-        self._sum_grad_b_in = tf.placeholder("float", shape=[300], name="sum_grad_b_in")
-        self._sum_grad_W_out = tf.placeholder("float", shape=[300, 1], name="sum_grad_W_out")
-        self._sum_conv2d_kernel = tf.placeholder("float", shape=[3, 3, 1, 12], name="sum_conv2d_kernel")
-        self._sum_conv2d_bias = tf.placeholder("float", shape=[12], name="sum_conv2d_bias")
+        self._sum_grad_W_in = tf.placeholder("float", shape=[3 * 3 * self._n_filters, self._n_hidden], name="sum_grad_W_in")
+        self._sum_grad_b_in = tf.placeholder("float", shape=[self._n_hidden], name="sum_grad_b_in")
+        self._sum_grad_W_out = tf.placeholder("float", shape=[self._n_hidden, 1], name="sum_grad_W_out")
+        self._sum_conv2d_kernel = tf.placeholder("float", shape=[3, 3, 1, self._n_filters], name="sum_conv2d_kernel")
+        self._sum_conv2d_bias = tf.placeholder("float", shape=[self._n_filters], name="sum_conv2d_bias")
 
-        self._W_in = tf.Variable(tf.random_normal([3 * 3 * 12, self._n_hidden], 0.0, 0.1), name="W_in")
+        self._W_in = tf.Variable(tf.random_normal([3 * 3 * self._n_filters, self._n_hidden], 0.0, 0.1), name="W_in")
         self._b_in = tf.Variable(tf.zeros([self._n_hidden]), name="b_in")
         self._W_out = tf.Variable(tf.random_normal([self._n_hidden, self._n_output], 0.0, 0.1), name="W_out")
 
         self._input_reshaped = tf.reshape(self._input, shape=[1, self._n_input_rows, self._n_input_cols, 1])
 
         # Convolutional Layer
-        # Computes 12 features using a 3x3 filter with ReLU activation.
+        # Computes N features using a 3x3 filter with ReLU activation.
         # No padding is added.
         # Input Tensor Shape (for the 2x2 board): [1, 5, 5, 1] (batch size, width, height, channels)
-        # Output Tensor Shape: [1, 3, 3, 12]
+        # Output Tensor Shape: [1, 3, 3, N]
         self._conv = tf.layers.conv2d(
             inputs=self._input_reshaped,
-            filters=12,
+            filters=self._n_filters,
             kernel_size=[3, 3],
             strides=(1, 1),
             kernel_initializer=tf.random_normal_initializer(0.0, 0.1),
             activation=tf.nn.relu)
 
-        self._conv_flat = tf.reshape(self._conv, [1, 3 * 3 * 12])
+        self._conv_flat = tf.reshape(self._conv, [1, 3 * 3 * self._n_filters])
 
         dense_layer = tf.nn.tanh(tf.matmul(self._conv_flat, self._W_in) + self._b_in)
 
@@ -67,7 +68,7 @@ class TDOneGradientPolicyCNN(Policy):
         self.reset_history()
 
     def get_architecture(self):
-        return "5x5-conv(3x3, relu, 12)-tanh(300)-sigmoid(1)"
+        return "5x5-conv(%sx%s, relu, %s)-tanh(%s)-sigmoid(1)" % (3, 3, self._n_filters, self._n_hidden)
 
     def reset_history(self):
         self._prediction_history = []

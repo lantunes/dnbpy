@@ -5,21 +5,20 @@ from util.file_helper import *
 
 board_size = (2, 2)
 num_episodes = 100000
-learning_rate = 0.5
-min_learning_rate = 0.05
+learning_rate = 0.005
+min_learning_rate = 0.0001
 temperature = 1.0
-min_temperature = 0.001
+min_temperature = 0.01
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-policy = TDOneGradientPolicy(board_size=board_size)
+policy = TDOneGradientPolicyCNN(board_size=board_size)
 policy.set_epsilon(0.0)
-opponent = TDOneTabularPolicy(board_size=board_size, table_file_path='../resources/td1_2x2_0.6_1.0_0.99_delayed_selfplay100k.txt')
-opponent.set_epsilon(0.35)
+opponent = RandomPolicy()
 random_policy = RandomPolicy()
 
-print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='vs. TD1 tabular', reward='delayed',
+print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='vs. Random', reward='delayed',
            updates='online', learning_rate=learning_rate, min_learning_rate=min_learning_rate, temperature=temperature,
            min_temperature=min_temperature, architecture=policy.get_architecture())
 
