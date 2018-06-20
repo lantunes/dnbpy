@@ -18,7 +18,7 @@ policy.set_epsilon(0.0)
 opponent = RandomPolicy()
 random_policy = RandomPolicy()
 
-print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='vs. Random', reward='delayed',
+print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='vs. Random', reward='delayed-shaped',
            updates='online', learning_rate=learning_rate, min_learning_rate=min_learning_rate, temperature=temperature,
            min_temperature=min_temperature, architecture=policy.get_architecture())
 
@@ -31,8 +31,9 @@ def gen_rate(iteration,l_max,l_min,N_max):
 
 
 def compute_reward(game):
-    if game.is_finished() and game.get_score('policy') > game.get_score('opponent'):
-        return 1.0
+    if game.is_finished():
+        score = game.get_score('policy')
+        return score / len(game.get_all_boxes())
     return 0.0
 
 unique_states_visited = set()

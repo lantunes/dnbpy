@@ -16,7 +16,7 @@ print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 policy = TDOneGradientPolicyV2(board_size=board_size)
 random_policy = RandomPolicy()
 
-print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward='delayed',
+print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward='delayed-binary',
            updates='offline', learning_rate=learning_rate, min_learning_rate=min_learning_rate, epsilon=epsilon,
            min_epsilon=min_epsilon, architecture=policy.get_architecture())
 

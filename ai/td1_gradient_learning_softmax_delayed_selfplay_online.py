@@ -17,7 +17,7 @@ policy = TDOneGradientPolicy(board_size=board_size)
 policy.set_epsilon(0.0)
 random_policy = RandomPolicy()
 
-print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward='delayed',
+print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward='delayed-binary',
            updates='online', learning_rate=learning_rate, min_learning_rate=min_learning_rate, temperature=temperature,
            min_temperature=min_temperature, architecture=policy.get_architecture())
 

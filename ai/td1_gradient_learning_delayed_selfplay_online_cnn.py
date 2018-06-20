@@ -17,7 +17,7 @@ policy = TDOneGradientPolicyCNN(board_size=board_size)
 policy.set_softmax_action(False)
 random_policy = RandomPolicy()
 
-print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward='delayed',
+print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward='delayed-binary',
            updates='online', learning_rate=learning_rate, min_learning_rate=min_learning_rate, epsilon=epsilon,
            min_epsilon=min_epsilon, architecture=policy.get_architecture())
 

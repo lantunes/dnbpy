@@ -19,7 +19,7 @@ opponent = TDOneTabularPolicy(board_size=board_size, table_file_path='../resourc
 opponent.set_epsilon(0.35)
 random_policy = RandomPolicy()
 
-print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='vs. TD1 tabular', reward='delayed',
+print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='vs. TD1 tabular', reward='delayed-binary',
            updates='online', learning_rate=learning_rate, min_learning_rate=min_learning_rate, epsilon=epsilon,
            min_epsilon=min_epsilon, architecture=policy.get_architecture())
 
