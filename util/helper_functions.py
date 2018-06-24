@@ -2,7 +2,7 @@
 
 def print_info(board_size, policy, num_episodes, learning_rate, min_learning_rate, epsilon=None, min_epsilon=None,
                temperature=None, min_temperature=None, mode='self-play', reward='delayed', updates='online',
-               architecture=None):
+               architecture=None, decay_speed=1):
     print("board size: %sx%s," % board_size)
     print("policy: %s," % policy.__class__.__name__)
     if architecture is not None:
@@ -18,4 +18,5 @@ def print_info(board_size, policy, num_episodes, learning_rate, min_learning_rat
         print("min. epsilon: %s," % min_epsilon)
     else:
         print("temperature: %s," % temperature)
-        print("min. temperature: %s" % min_temperature)
+        print("min. temperature: %s," % min_temperature)
+    print("decay speed: %s" % decay_speed)

@@ -2,6 +2,8 @@ from ai import *
 from dnbpy import *
 from util.helper_functions import *
 from util.file_helper import *
+from util.reward_util import *
+from util.rate_util import *
 
 board_size = (2, 2)
 num_episodes = 100000
@@ -9,6 +11,7 @@ learning_rate = 0.005
 min_learning_rate = 0.0001
 temperature = 1.0
 min_temperature = 0.01
+decay_speed = 1.0
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
@@ -17,29 +20,17 @@ policy = TDOneGradientPolicyCNN(board_size=board_size)
 policy.set_epsilon(0.0)
 opponent = RandomPolicy()
 random_policy = RandomPolicy()
+reward_fn = DelayedBinaryReward()
 
-print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='vs. Random', reward='delayed-shaped',
+print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='vs. Random', reward=reward_fn,
            updates='online', learning_rate=learning_rate, min_learning_rate=min_learning_rate, temperature=temperature,
-           min_temperature=min_temperature, architecture=policy.get_architecture())
+           min_temperature=min_temperature, architecture=policy.get_architecture(), decay_speed=decay_speed)
 
-
-def gen_rate(iteration,l_max,l_min,N_max):
-    if iteration>N_max: return (l_min)
-    alpha = 2*l_max
-    beta = np.log((alpha/l_min-1))/N_max
-    return (alpha/(1+np.exp(beta*iteration)))
-
-
-def compute_reward(game):
-    if game.is_finished():
-        score = game.get_score('policy')
-        return score / len(game.get_all_boxes())
-    return 0.0
 
 unique_states_visited = set()
 for episode_num in range(1, num_episodes + 1):
-    tmp = gen_rate(episode_num, temperature, min_temperature, num_episodes)
-    lr = gen_rate(episode_num, learning_rate, min_learning_rate, num_episodes)
+    tmp = gen_rate_exponential(episode_num, temperature, min_temperature, num_episodes, decay_speed)
+    lr = gen_rate_exponential(episode_num, learning_rate, min_learning_rate, num_episodes, decay_speed)
     policy.set_softmax_action(True)
     policy.set_temperature(tmp)
     policy.set_learning_rate(lr)
@@ -60,7 +51,7 @@ for episode_num in range(1, num_episodes + 1):
             edge = opponent.select_edge(board_state)
             current_player, _ = game.select_edge(edge, 'opponent')
 
-    reward = compute_reward(game)
+    reward = reward_fn.compute_reward(game, 'policy', 'opponent')
     policy.update_terminal(reward)
     # analyze results
     if episode_num % 500 == 0:
