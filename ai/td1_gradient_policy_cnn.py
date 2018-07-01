@@ -2,11 +2,11 @@ from ai import *
 from dnbpy import *
 import tensorflow as tf
 import numpy as np
+from util.initializer_util import *
 
 
 class TDOneGradientPolicyCNN(Policy):
-    def __init__(self, board_size):
-        self._sess = tf.Session()
+    def __init__(self, board_size, existing_params=None):
         self._board_size = board_size
 
         edge_matrix = init_edge_matrix(board_size)
@@ -16,54 +16,67 @@ class TDOneGradientPolicyCNN(Policy):
         self._n_filters = 12
         self._n_output = 1
 
-        self._input = tf.placeholder("float", [self._n_input_rows, self._n_input_cols], name="input")
-        self._target = tf.placeholder("float", [1, self._n_output], name="target")
-        self._error = tf.placeholder("float", shape=[], name="error")
-        self._lr = tf.placeholder("float", shape=[], name="learning_rate")
-        self._sum_grad_W_in = tf.placeholder("float", shape=[3 * 3 * self._n_filters, self._n_hidden], name="sum_grad_W_in")
-        self._sum_grad_b_in = tf.placeholder("float", shape=[self._n_hidden], name="sum_grad_b_in")
-        self._sum_grad_W_out = tf.placeholder("float", shape=[self._n_hidden, 1], name="sum_grad_W_out")
-        self._sum_conv2d_kernel = tf.placeholder("float", shape=[3, 3, 1, self._n_filters], name="sum_conv2d_kernel")
-        self._sum_conv2d_bias = tf.placeholder("float", shape=[self._n_filters], name="sum_conv2d_bias")
+        # TF graph creation
+        g = tf.Graph()
+        with g.as_default():
+            self._input = tf.placeholder("float", [self._n_input_rows, self._n_input_cols], name="input")
+            self._target = tf.placeholder("float", [1, self._n_output], name="target")
+            self._error = tf.placeholder("float", shape=[], name="error")
+            self._lr = tf.placeholder("float", shape=[], name="learning_rate")
+            self._sum_grad_W_in = tf.placeholder("float", shape=[3 * 3 * self._n_filters, self._n_hidden], name="sum_grad_W_in")
+            self._sum_grad_b_in = tf.placeholder("float", shape=[self._n_hidden], name="sum_grad_b_in")
+            self._sum_grad_W_out = tf.placeholder("float", shape=[self._n_hidden, 1], name="sum_grad_W_out")
+            self._sum_conv2d_kernel = tf.placeholder("float", shape=[3, 3, 1, self._n_filters], name="sum_conv2d_kernel")
+            self._sum_conv2d_bias = tf.placeholder("float", shape=[self._n_filters], name="sum_conv2d_bias")
 
-        self._W_in = tf.Variable(tf.random_normal([3 * 3 * self._n_filters, self._n_hidden], 0.0, 0.1), name="W_in")
-        self._b_in = tf.Variable(tf.zeros([self._n_hidden]), name="b_in")
-        self._W_out = tf.Variable(tf.random_normal([self._n_hidden, self._n_output], 0.0, 0.1), name="W_out")
+            W_in_initializer = existing_param_initializer(existing_params, "W_in", tf.random_normal_initializer(0.0, 0.1))
+            b_in_initializer = existing_param_initializer(existing_params, "b_in", tf.zeros_initializer())
+            W_out_initializer = existing_param_initializer(existing_params, "W_out", tf.random_normal_initializer(0.0, 0.1))
+            conv_kernel_initializer = existing_param_initializer(existing_params, "conv2d/kernel:0", tf.random_normal_initializer(0.0, 0.1))
+            conv_bias_initializer = existing_param_initializer(existing_params, "conv2d/bias:0", tf.zeros_initializer())
 
-        self._input_reshaped = tf.reshape(self._input, shape=[1, self._n_input_rows, self._n_input_cols, 1])
+            self._W_in = tf.get_variable(shape=[3 * 3 * self._n_filters, self._n_hidden], initializer=W_in_initializer, name="W_in")
+            self._b_in = tf.get_variable(shape=[self._n_hidden], initializer=b_in_initializer, name="b_in")
+            self._W_out = tf.get_variable(shape=[self._n_hidden, self._n_output], initializer=W_out_initializer, name="W_out")
 
-        # Convolutional Layer
-        # Computes N features using a 3x3 filter with ReLU activation.
-        # No padding is added.
-        # Input Tensor Shape (for the 2x2 board): [1, 5, 5, 1] (batch size, width, height, channels)
-        # Output Tensor Shape: [1, 3, 3, N]
-        self._conv = tf.layers.conv2d(
-            inputs=self._input_reshaped,
-            filters=self._n_filters,
-            kernel_size=[3, 3],
-            strides=(1, 1),
-            kernel_initializer=tf.random_normal_initializer(0.0, 0.1),
-            activation=tf.nn.relu)
+            self._input_reshaped = tf.reshape(self._input, shape=[1, self._n_input_rows, self._n_input_cols, 1])
 
-        self._conv_flat = tf.reshape(self._conv, [1, 3 * 3 * self._n_filters])
+            # Convolutional Layer
+            # Computes N features using a 3x3 filter with ReLU activation.
+            # No padding is added.
+            # Input Tensor Shape (for the 2x2 board): [1, 5, 5, 1] (batch size, width, height, channels)
+            # Output Tensor Shape: [1, 3, 3, N]
+            self._conv = tf.layers.conv2d(
+                inputs=self._input_reshaped,
+                filters=self._n_filters,
+                kernel_size=[3, 3],
+                strides=(1, 1),
+                kernel_initializer=conv_kernel_initializer,
+                bias_initializer=conv_bias_initializer,
+                activation=tf.nn.relu)
 
-        dense_layer = tf.nn.tanh(tf.matmul(self._conv_flat, self._W_in) + self._b_in)
+            self._conv_flat = tf.reshape(self._conv, [1, 3 * 3 * self._n_filters])
 
-        self._prediction = tf.nn.sigmoid(tf.matmul(dense_layer, self._W_out))
+            dense_layer = tf.nn.tanh(tf.matmul(self._conv_flat, self._W_in) + self._b_in)
 
-        self._conv2d_kernel = [v for v in tf.global_variables() if v.name == 'conv2d/kernel:0'][0]
-        self._conv2d_bias = [v for v in tf.global_variables() if v.name == 'conv2d/bias:0'][0]
+            self._prediction = tf.nn.sigmoid(tf.matmul(dense_layer, self._W_out))
 
-        self._gradients = tf.gradients(self._prediction, [self._W_in, self._b_in, self._W_out,
-                                                          self._conv2d_kernel, self._conv2d_bias])
+            self._conv2d_kernel = [v for v in tf.global_variables() if v.name == 'conv2d/kernel:0'][0]
+            self._conv2d_bias = [v for v in tf.global_variables() if v.name == 'conv2d/bias:0'][0]
 
-        self._update_W_in = self._W_in.assign(self._W_in + self._lr * self._error * self._sum_grad_W_in)
-        self._update_b_in = self._b_in.assign(self._b_in + self._lr * self._error * self._sum_grad_b_in)
-        self._update_W_out = self._W_out.assign(self._W_out + self._lr * self._error * self._sum_grad_W_out)
-        self._update_conv2d_kernel = self._conv2d_kernel.assign(self._conv2d_kernel + self._lr * self._error * self._sum_conv2d_kernel)
-        self._update_conv2d_bias = self._conv2d_bias.assign(self._conv2d_bias + self._lr * self._error * self._sum_conv2d_bias)
+            self._gradients = tf.gradients(self._prediction, [self._W_in, self._b_in, self._W_out,
+                                                              self._conv2d_kernel, self._conv2d_bias])
 
-        self._sess.run(tf.global_variables_initializer())
+            self._update_W_in = self._W_in.assign(self._W_in + self._lr * self._error * self._sum_grad_W_in)
+            self._update_b_in = self._b_in.assign(self._b_in + self._lr * self._error * self._sum_grad_b_in)
+            self._update_W_out = self._W_out.assign(self._W_out + self._lr * self._error * self._sum_grad_W_out)
+            self._update_conv2d_kernel = self._conv2d_kernel.assign(self._conv2d_kernel + self._lr * self._error * self._sum_conv2d_kernel)
+            self._update_conv2d_bias = self._conv2d_bias.assign(self._conv2d_bias + self._lr * self._error * self._sum_conv2d_bias)
+
+        # TF session creation and initialization
+        self._sess = tf.Session(graph=g)
+        with g.as_default():
+            self._sess.run(tf.global_variables_initializer())
 
         self.reset_history()
 
@@ -211,6 +224,28 @@ class TDOneGradientPolicyCNN(Policy):
                                           self._sum_grad_W_in: sum_grad_W_in, self._sum_grad_b_in: sum_grad_b_in,
                                           self._sum_grad_W_out: sum_grad_W_out, self._sum_conv2d_kernel: sum_conv2d_kernel,
                                           self._sum_conv2d_bias: sum_conv2d_bias})
+
+    def get_params(self):
+        params_map = {}
+        params = self._sess.run([self._W_in])
+        params_map["W_in"] = params[0].tolist()
+        params = self._sess.run([self._b_in])
+        params_map["b_in"] = params[0].tolist()
+        params = self._sess.run([self._W_out])
+        params_map["W_out"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_kernel])
+        params_map["conv2d/kernel:0"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_bias])
+        params_map["conv2d/bias:0"] = params[0].tolist()
+        return params_map
+
+    def copy(self):
+        policy_copy = type(self)(self._board_size, self.get_params())
+        policy_copy.set_temperature(self.get_temperature())
+        policy_copy.set_softmax_action(self.is_softmax_action())
+        policy_copy.set_epsilon(self.get_epsilon())
+        policy_copy.set_should_store_history(False)
+        return policy_copy
 
     def print_params(self, f):
         params = self._sess.run([self._W_in])

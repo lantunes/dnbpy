@@ -1,0 +1,18 @@
+project: dnbpy
+
+open-webbrowser: false
+
+exclude:
+  - .git
+  - .eggs
+  - eggs
+  - lib
+  - lib64
+  - parts
+  - sdist
+  - var
+  - out
+  - output
+  - .idea
+  - resources
+  - tests

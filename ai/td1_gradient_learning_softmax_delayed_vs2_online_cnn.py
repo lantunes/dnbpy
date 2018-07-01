@@ -4,64 +4,64 @@ from util.helper_functions import *
 from util.file_helper import *
 from util.reward_util import *
 from util.rate_util import *
+from util.opponent_pool_util import *
 
 board_size = (2, 2)
-num_episodes = 300000
+num_episodes = 100000
 learning_rate = 0.005
-min_learning_rate = 0.000001
-epsilon = 1.0
-min_epsilon = 0.01
+min_learning_rate = 0.0001
+temperature = 1.0
+min_temperature = 0.01
 decay_speed = 1.0
+opponent_pool_max_size = 100
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-policy = TDOneGradientPolicyCNNV2(board_size=board_size)
+policy = TDOneGradientPolicyCNN(board_size=board_size)
+policy.set_epsilon(0.0)
 random_policy = RandomPolicy()
 reward_fn = DelayedBinaryReward()
+opponent_pool = OpponentPool(max_size=opponent_pool_max_size)
+opponent_pool.add_to_pool(RandomPolicy())
 
-print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward=reward_fn,
-           updates='offline', learning_rate=learning_rate, min_learning_rate=min_learning_rate, epsilon=epsilon,
-           min_epsilon=min_epsilon, architecture=policy.get_architecture(), decay_speed=decay_speed)
+print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='vs. Self pool', reward=reward_fn,
+           updates='online', learning_rate=learning_rate, min_learning_rate=min_learning_rate, temperature=temperature,
+           min_temperature=min_temperature, architecture=policy.get_architecture(), decay_speed=decay_speed)
 
 
 unique_states_visited = set()
 for episode_num in range(1, num_episodes + 1):
-    eps = gen_rate_exponential(episode_num, epsilon, min_epsilon, num_episodes, decay_speed)
+    tmp = gen_rate_exponential(episode_num, temperature, min_temperature, num_episodes, decay_speed)
     lr = gen_rate_exponential(episode_num, learning_rate, min_learning_rate, num_episodes, decay_speed)
-    policy.set_epsilon(eps)
+    policy.set_softmax_action(True)
+    policy.set_temperature(tmp)
     policy.set_learning_rate(lr)
-    policy.reset_history_buffer()
-    players = [0, 1]
+    policy.reset_history()
+    opponent = opponent_pool.sample_opponent(epsilon=0.5)
+    players = ['policy', 'opponent'] if episode_num % 2 == 0 else ['opponent', 'policy']
     game = Game(board_size, players)
     current_player = game.get_current_player()
-    prediction_history_p1 = []
-    prediction_gradient_history_p1 = []
-    prediction_history_p2 = []
-    prediction_gradient_history_p2 = []
     while not game.is_finished():
         board_state = game.get_board_state()
-        if current_player == 0:
+        if current_player == 'policy':
+            policy.set_should_store_history(True)
             edge = policy.select_edge(board_state)
-            current_player, _ = game.select_edge(edge, 0)
-            prediction_history_p1.append(policy.get_last_prediction())
-            prediction_gradient_history_p1.append(policy.get_last_prediction_gradient())
+            current_player, _ = game.select_edge(edge, 'policy')
+            if not game.is_finished():
+                policy.update()
             unique_states_visited.add(as_string(game.get_board_state()))
         else:
-            edge = policy.select_edge(board_state)
-            current_player, _ = game.select_edge(edge, 1)
-            prediction_history_p2.append(policy.get_last_prediction())
-            prediction_gradient_history_p2.append(policy.get_last_prediction_gradient())
-            unique_states_visited.add(as_string(game.get_board_state()))
+            edge = opponent.select_edge(board_state)
+            current_player, _ = game.select_edge(edge, 'opponent')
 
-    reward = reward_fn.compute_reward(game, 0, 1)
-    policy.update_offline(prediction_history_p1, prediction_gradient_history_p1, reward)
-    reward = reward_fn.compute_reward(game, 1, 0)
-    policy.update_offline(prediction_history_p2, prediction_gradient_history_p2, reward)
+    reward = reward_fn.compute_reward(game, 'policy', 'opponent')
+    policy.update_terminal(reward)
+    policy.set_softmax_action(False)
+    opponent_pool.add_to_pool(policy.copy())
     # analyze results
     if episode_num % 500 == 0:
         # play against random opponent
-        policy.set_epsilon(0.0)
         results = {'won': 0, 'lost': 0, 'tied': 0}
         for trial in range(500):
             players = ['policy', 'random']
@@ -86,5 +86,5 @@ for episode_num in range(1, num_episodes + 1):
             else:
                 results['tied'] += 1
         print("%s, %s, %s, %s (%s, %s)" % (episode_num, results['won'], results,
-                                           len(unique_states_visited), eps, lr))
+                                           len(unique_states_visited), tmp, lr))
         WeightWriter.print_episode(base_path, episode_num, policy.print_params)

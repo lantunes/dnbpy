@@ -1,0 +1,5 @@
+neptune account login
+
+neptune project activate lantunes/dnbpy
+
+neptune send --environment tensorflow-1.6-cpu-py3 --worker gcp-medium ai/td1_gradient_learning_delayed_vs_offline_cnn_v2.py -b /output/
