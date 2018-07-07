@@ -9,3 +9,4 @@ from .td1_gradient_policy_mlp_v2 import *
 from .td1_gradient_policy_cnn_v2 import *
 from .td1_gradient_policy_cnn_v2b import *
 from .td1_gradient_policy_cnn_v2c import *
+from .td1_gradient_policy_cnn_v2d import *
