@@ -10,3 +10,6 @@ from .td1_gradient_policy_cnn_v2 import *
 from .td1_gradient_policy_cnn_v2b import *
 from .td1_gradient_policy_cnn_v2c import *
 from .td1_gradient_policy_cnn_v2d import *
+from .td1_gradient_3x3_policy_cnn_v2 import *
+from .level1_heuristic_policy import *
+from .level2_heuristic_policy import *

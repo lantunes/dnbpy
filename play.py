@@ -35,6 +35,10 @@ def main():
     td1 = ai.TDOneTabularPolicy((board_rows, board_cols), learning_rate=0.0, gamma=0.0,
                                 table_file_path='resources/td1_2x2_0.6_1.0_0.99_delayed_selfplay100k.txt')
 
+    L1 = ai.Level1HeuristicPolicy((board_rows, board_cols))
+
+    L2 = ai.Level2HeuristicPolicy((board_rows, board_cols))
+
     game = dnbpy.Game((board_rows, board_cols), players)
     print(game)
     while not game.is_finished():
@@ -50,6 +54,14 @@ def main():
             print("computer player selects edge %s" % move)
         elif current_player == "$td1":
             move = td1.select_edge(game.get_board_state())
+            current_player, _ = game.select_edge(move, current_player)
+            print("computer player selects edge %s" % move)
+        elif current_player == "$L1":
+            move = L1.select_edge(game.get_board_state())
+            current_player, _ = game.select_edge(move, current_player)
+            print("computer player selects edge %s" % move)
+        elif current_player == "$L2":
+            move = L2.select_edge(game.get_board_state())
             current_player, _ = game.select_edge(move, current_player)
             print("computer player selects edge %s" % move)
         else:
