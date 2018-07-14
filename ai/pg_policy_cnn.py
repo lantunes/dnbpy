@@ -5,7 +5,7 @@ import numpy as np
 
 
 class PGPolicyCNN(Policy):
-    def __init__(self, board_size, batch_size=1, reduction=None):
+    def __init__(self, board_size, batch_size=1):
         self._sess = tf.Session()
         self._board_size = board_size
         self._batch_size = batch_size
@@ -50,8 +50,8 @@ class PGPolicyCNN(Policy):
         self._cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
             logits=tf.matmul(dense_layer, self._W_out), labels=self._action_taken)
         self._loss = self._cross_entropy * self._outcome
-        if reduction is not None:
-            self._loss = reduction(self._loss)
+        if self._batch_size > 1:
+            self._loss = tf.reduce_mean(self._loss)
         self._train_op = tf.train.GradientDescentOptimizer(self._lr).minimize(self._loss)
 
         self._conv2d_kernel = [v for v in tf.global_variables() if v.name == 'conv2d/kernel:0'][0]

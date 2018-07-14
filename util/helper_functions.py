@@ -2,7 +2,7 @@
 
 def print_info(board_size, policy, num_episodes, learning_rate, min_learning_rate, epsilon=None, min_epsilon=None,
                temperature=None, min_temperature=None, mode='self-play', reward='delayed', updates='online',
-               architecture=None, decay_speed=1, rand_prob=None):
+               architecture=None, decay_speed=1, rand_prob=None, batch_size=None):
     print("board size: %sx%s," % board_size)
     print("policy: %s," % policy.__class__.__name__)
     if architecture is not None:
@@ -16,9 +16,17 @@ def print_info(board_size, policy, num_episodes, learning_rate, min_learning_rat
     if epsilon is not None:
         print("epsilon: %s," % epsilon)
         print("min. epsilon: %s," % min_epsilon)
-    else:
+    if temperature is not None:
         print("temperature: %s," % temperature)
         print("min. temperature: %s," % min_temperature)
     if rand_prob is not None:
         print("random player prob.: %s," % rand_prob)
+    if batch_size is not None:
+        print("batch size: %s," % batch_size)
     print("decay speed: %s" % decay_speed)
+
+
+def to_one_hot_action(board_state, edge_index):
+    action_vector = [0]*len(board_state)
+    action_vector[edge_index] = 1
+    return action_vector

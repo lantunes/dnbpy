@@ -25,12 +25,6 @@ print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode
            min_temperature=min_temperature, architecture=policy.get_architecture(), decay_speed=decay_speed)
 
 
-def to_one_hot_action(board_state, edge_index):
-    action_vector = [0]*len(board_state)
-    action_vector[edge_index] = 1
-    return action_vector
-
-
 def append_transitions(states, actions, outcomes, all_transitions):
     for i, _ in enumerate(actions):
         state = states[i]
