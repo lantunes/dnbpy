@@ -11,14 +11,14 @@ num_episodes = 1000000
 learning_rate = 0.005
 min_learning_rate = 0.000001
 temperature = 1.0
-min_temperature = 0.01
+min_temperature = 0.3
 batch_size = 32
 decay_speed = 1.0
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-policy = PGPolicyCNN(board_size, batch_size=batch_size)
+policy = PGPolicyCNN2(board_size, batch_size=batch_size)
 reward_fn = DelayedBinaryReward()
 
 print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward=reward_fn,

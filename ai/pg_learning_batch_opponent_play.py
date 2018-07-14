@@ -16,7 +16,7 @@ base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-policy = PGPolicyCNN(board_size, batch_size=32)
+policy = PGPolicyCNN2(board_size, batch_size=32)
 p0 = Level2HeuristicPolicy(board_size)
 p1 = RandomPolicy()
 reward_fn = DelayedBinaryReward()
