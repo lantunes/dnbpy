@@ -6,18 +6,20 @@ from util.reward_util import *
 from util.rate_util import *
 from util.evaluator import *
 
+import tensorflow as tf
+
 board_size = (2, 2)
-num_episodes = 300000
-learning_rate = 0.0005
+num_episodes = 1000000
+learning_rate = 0.005
 min_learning_rate = 0.000001
 temperature = 1.0
-min_temperature = 1.0
+min_temperature = 0.01
 decay_speed = 1.0
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-policy = PGPolicyCNN(board_size, batch_size=1)
+policy = PGPolicyCNN(board_size, batch_size=32, reduction=tf.reduce_mean)
 reward_fn = DelayedBinaryReward()
 
 print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward=reward_fn,
@@ -39,6 +41,7 @@ def append_transitions(states, actions, outcomes, all_transitions):
         all_transitions.append([state, action, reward])
 
 unique_states_visited = set()
+all_transitions = []
 for episode_num in range(1, num_episodes + 1):
     tmp = gen_rate_exponential(episode_num, temperature, min_temperature, num_episodes, decay_speed)
     lr = gen_rate_exponential(episode_num, learning_rate, min_learning_rate, num_episodes, decay_speed)
@@ -71,17 +74,21 @@ for episode_num in range(1, num_episodes + 1):
 
     p0_reward = reward_fn.compute_reward(game, 0, 1)
     p1_reward = reward_fn.compute_reward(game, 1, 0)
-    p0_outcomes = len(p0_actions)*[p0_reward]
-    p1_outcomes = len(p1_actions)*[p1_reward]
 
-    all_transitions = []
-    append_transitions(p0_states, p0_actions, p0_outcomes, all_transitions)
-    append_transitions(p1_states, p1_actions, p1_outcomes, all_transitions)
+    # don't add transitions that have 0 reward as the gradient will be zero anyways
+    if p0_reward == 1:
+        p0_outcomes = len(p0_actions)*[p0_reward]
+        append_transitions(p0_states, p0_actions, p0_outcomes, all_transitions)
+    elif p1_reward == 1:
+        p1_outcomes = len(p1_actions)*[p1_reward]
+        append_transitions(p1_states, p1_actions, p1_outcomes, all_transitions)
 
-    policy.update_model(all_transitions)
+    if episode_num % 100 == 0:
+        policy.update_model(all_transitions)
+        all_transitions = []
 
     # analyze results
-    if episode_num % 500 == 0:
+    if episode_num % 1000 == 0:
         # play against opponents
         policy.set_boltzmann_action(False)
         opponents = [RandomPolicy(), Level1HeuristicPolicy(board_size), Level2HeuristicPolicy(board_size)]

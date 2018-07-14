@@ -12,6 +12,26 @@ def gen_rate_exponential(n, max, min, n_max, speed=1):
     return alpha / (1 + np.exp((beta * n)))
 
 
+def gen_rate_step(n, schedule):
+    """
+    :param n: the current iteration number 
+    :param schedule: a dictionary where the keys are the min value for the step and the values are the corresponding 
+                     rate; for example, {0: 0.005, 200: 0.0002, 400: 0.0001} is an annealing schedule where iterations
+                     0 to 200 get a rate of 0.005, iterations 201 to 400 get a rate of 0.0002, and iterations >400 get
+                     a rate of 0.0001; importantly, schedule dictionaries will be ordered by key, and the first key 
+                     must be 0 
+    :return: the corresponding rate for the iteration number n
+    """
+    sorted_keys = sorted(schedule.keys())
+    if len(sorted_keys) < 1 or sorted_keys[0] != 0:
+        raise Exception("the schedule must contain 0 as a key")
+    for k in reversed(sorted_keys):
+        if n > k:
+            return schedule[k]
+        if n == 0:
+            return schedule[0]
+
+
 def plot_rate(max, min, num_episodes, speed, fn):
     episodes = []
     vals = []

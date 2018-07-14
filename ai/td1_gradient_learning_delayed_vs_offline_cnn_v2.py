@@ -14,7 +14,7 @@ epsilon = 1.0
 min_epsilon = 0.01
 decay_speed = 1.0
 base_path = get_base_path_arg()
-rand_prob = 0.5
+rand_prob = 0.0
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
@@ -26,12 +26,16 @@ print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode
            updates='offline', learning_rate=learning_rate, min_learning_rate=min_learning_rate, epsilon=epsilon,
            min_epsilon=min_epsilon, architecture=policy.get_architecture(), decay_speed=decay_speed, rand_prob=rand_prob)
 
+# learning_rate_schedule = {0: 0.005, 20000: 0.001, 40000: 0.0003, 60000: 0.00001, 80000: 0.000001}
+# epsilon_schedule = {0: 1.0, 20000: 0.7, 40000: 0.5, 60000: 0.2, 80000: 0.01}
 
 unique_states_visited = set()
 games_played_against_random = 0
 for episode_num in range(1, num_episodes + 1):
     eps = gen_rate_exponential(episode_num, epsilon, min_epsilon, num_episodes, decay_speed)
     lr = gen_rate_exponential(episode_num, learning_rate, min_learning_rate, num_episodes, decay_speed)
+    # eps = gen_rate_step(episode_num, epsilon_schedule)
+    # lr = gen_rate_step(episode_num, learning_rate_schedule)
     policy.set_epsilon(eps)
     policy.set_learning_rate(lr)
     policy.reset_history_buffer()
@@ -88,9 +92,9 @@ for episode_num in range(1, num_episodes + 1):
         # play against opponents
         policy.set_epsilon(0.0)
         opponents = [RandomPolicy(), Level1HeuristicPolicy(board_size), Level2HeuristicPolicy(board_size)]
-        results = evaluate(policy, board_size, 500, opponents)
-        print("%s, %s, %s, %s, %s, %s, %s, %s" % (episode_num, results[opponents[0].__class__.__name__]['won'],
-                                                  results[opponents[1].__class__.__name__]['won'],
-                                                  results[opponents[2].__class__.__name__]['won'],
+        results = evaluate(policy, board_size, 1000, opponents)
+        print("%s, %s, %s, %s, %s, %s, %s, %s" % (episode_num, results[RandomPolicy.__name__]['won'],
+                                                  results[Level1HeuristicPolicy.__name__]['won'],
+                                                  results[Level2HeuristicPolicy.__name__]['won'],
                                                   results, len(unique_states_visited), eps, lr))
         WeightWriter.print_episode(base_path, episode_num, policy.print_params)

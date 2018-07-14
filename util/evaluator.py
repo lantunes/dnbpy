@@ -1,3 +1,5 @@
+from threading import Thread
+
 from dnbpy import *
 
 
@@ -29,3 +31,32 @@ def evaluate(policy, board_size, num_trials, opponents):
                 results['tied'] += 1
         final_results[opponent_policy.__class__.__name__] = results
     return final_results
+
+
+class EvaluationThread(Thread):
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None):
+        Thread.__init__(self, group, target, name, args, kwargs, daemon=daemon)
+        self._return = None
+
+    def run(self):
+        if self._target is not None:
+            self._return = self._target(*self._args, **self._kwargs)
+
+    def join(self, timeout=None):
+        Thread.join(self)
+        return self._return
+
+
+def evaluate_parallel(policy, board_size, num_trials, opponents):
+    final_results = {}
+    workers = []
+    for opponent_policy in opponents:
+        t = EvaluationThread(target=evaluate, args=(policy, board_size, num_trials, [opponent_policy]))
+        t.start()
+        workers.append(t)
+    for t in workers:
+        results = t.join()
+        final_results.update(results)
+    return final_results
+
+

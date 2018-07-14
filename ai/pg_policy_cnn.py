@@ -5,7 +5,7 @@ import numpy as np
 
 
 class PGPolicyCNN(Policy):
-    def __init__(self, board_size, batch_size=1):
+    def __init__(self, board_size, batch_size=1, reduction=None):
         self._sess = tf.Session()
         self._board_size = board_size
         self._batch_size = batch_size
@@ -49,9 +49,9 @@ class PGPolicyCNN(Policy):
 
         self._cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
             logits=tf.matmul(dense_layer, self._W_out), labels=self._action_taken)
-
         self._loss = self._cross_entropy * self._outcome
-
+        if reduction is not None:
+            self._loss = reduction(self._loss)
         self._train_op = tf.train.GradientDescentOptimizer(self._lr).minimize(self._loss)
 
         self._conv2d_kernel = [v for v in tf.global_variables() if v.name == 'conv2d/kernel:0'][0]
@@ -60,7 +60,7 @@ class PGPolicyCNN(Policy):
         self._sess.run(tf.global_variables_initializer())
 
     def get_architecture(self):
-        return "5x5-conv(3x3, relu, 12)-tanh(300)-sigmoid(1)"
+        return "5x5-conv(3x3, relu, 12)-tanh(300)-softmax(1)"
 
     def select_edge(self, board_state):
         edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
@@ -85,8 +85,8 @@ class PGPolicyCNN(Policy):
             return selected_index
         else:
             # return the legal action with the highest prob
-            highest_prob_index = 0
-            highest_prob = 0.0
+            highest_prob_index = random.choice(zero_indices)
+            highest_prob = action_probs[highest_prob_index]
             for i, p in enumerate(action_probs):
                 if i in zero_indices and p > highest_prob:
                     highest_prob_index = i

@@ -10,7 +10,7 @@ class DelayedBinaryReward:
         return 0.0
 
     def __str__(self):
-        return "delayed-binary"
+        return "delayed-binary (1/0)"
 
 
 class DelayedShapedReward:
@@ -25,3 +25,16 @@ class DelayedShapedReward:
 
     def __str__(self):
         return "delayed-shaped"
+
+
+class DelayedBinaryOneNegativeOneReward:
+    def __init__(self):
+        pass
+
+    def compute_reward(self, game, policy_name, opponent_name):
+        if game.is_finished() and game.get_score(policy_name) > game.get_score(opponent_name):
+            return 1.0
+        return -1.0
+
+    def __str__(self):
+        return "delayed-binary (+1/-1)"

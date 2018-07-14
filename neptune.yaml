@@ -16,3 +16,5 @@ exclude:
   - .idea
   - resources
   - tests
+
+pip-requirements-file: requirements.txt
