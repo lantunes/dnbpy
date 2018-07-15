@@ -16,3 +16,5 @@ from .level2_heuristic_policy import *
 from .causal_entropic_policy import *
 from .pg_policy_cnn import *
 from .pg_policy_cnn2 import *
+from .mcts_game import *
+from .mcts_policy import *
