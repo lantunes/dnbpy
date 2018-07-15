@@ -8,15 +8,21 @@ class MCTSPolicy:
     """
     The game tree is represented as an acyclic directed graph, where nodes, representing game states, are not
     repeated, and thus may have multiple parents.
-    TODO add option to reset node_map when select_edge is called
     """
-    def __init__(self, board_size, num_playouts):
+    def __init__(self, board_size, num_playouts, reset_tree=False):
         # a dictionary of binary state strings to the nodes that represent them
         self._node_map = {}
         self._board_size = board_size
         self._num_playouts = num_playouts
+        self._reset_tree = reset_tree
+
+    def set_num_playouts(self, num_playouts):
+        self._num_playouts = num_playouts
 
     def select_edge(self, board_state, root_player_score):
+        if self._reset_tree:
+            self._node_map = {}
+
         # Perform playouts
         for i in range(self._num_playouts):
             game = MCTSGame(self._board_size, players=['root', 'opponent'], board_state=board_state,
@@ -32,6 +38,7 @@ class MCTSPolicy:
                 child_states = self._get_child_states(parent_node.state)
                 child_nodes = self._get_child_nodes(child_states)
 
+                # Selection
                 highest_ucb1 = None
                 selected_child_node = None
                 for child_node in child_nodes:
@@ -143,6 +150,8 @@ class _Node:
         self.visits = 0
 
     def ucb1(self, parent):
+        if parent.visits == 0:
+            return 0
         if self.visits == 0:
             return math.inf
         return self.wins/self.visits + sqrt(2*log(parent.visits)/self.visits)
