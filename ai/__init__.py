@@ -18,3 +18,4 @@ from .pg_policy_cnn import *
 from .pg_policy_cnn2 import *
 from .mcts_game import *
 from .mcts_policy import *
+from .mcts_policy2 import *

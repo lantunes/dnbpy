@@ -128,13 +128,6 @@ class MCTSPolicy:
         argmax = max(enumerate(diff), key=lambda x: x[1])[0]
         return argmax
 
-    def _is_initial(self, board_state):
-        """
-        :param board_state: the binary string representation of the board 
-        :return: True if this is the initial game state, where no edges are selected
-        """
-        return sum(board_state) == 0
-
     def _is_terminal(self, board_state):
         return sum(board_state) == len(board_state)
 
