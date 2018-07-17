@@ -1,0 +1,178 @@
+Results:
+
+board size: 2x2
+player 1 (RandomPolicy) vs. player 2 (Level1HeuristicPolicy)
+RandomPolicy: {'lost': 7761, 'tied': 1799, 'won': 440}; Level1HeuristicPolicy: {'lost': 440, 'tied': 1799, 'won': 7761}
+
+board size: 2x2
+player 1 (RandomPolicy) vs. player 2 (Level2HeuristicPolicy)
+RandomPolicy: {'won': 312, 'tied': 1693, 'lost': 7995}; Level2HeuristicPolicy: {'won': 7995, 'tied': 1693, 'lost': 312}
+
+board size: 2x2
+player 1 (Level1HeuristicPolicy) vs. player 2 (Level2HeuristicPolicy)
+Level1HeuristicPolicy: {'lost': 5408, 'tied': 3361, 'won': 1231}; Level2HeuristicPolicy: {'lost': 1231, 'tied': 3361, 'won': 5408}
+
+board size: 3x3
+player 1 (RandomPolicy) vs. player 2 (Level1HeuristicPolicy)
+RandomPolicy: {'tied': 0, 'won': 31, 'lost': 9969}; Level1HeuristicPolicy: {'tied': 0, 'won': 9969, 'lost': 31}
+
+board size: 3x3
+player 1 (RandomPolicy) vs. player 2 (Level2HeuristicPolicy)
+RandomPolicy: {'lost': 9966, 'won': 34, 'tied': 0}; Level2HeuristicPolicy: {'lost': 34, 'won': 9966, 'tied': 0}
+
+board size: 3x3
+player 1 (Level1HeuristicPolicy) vs. player 2 (Level2HeuristicPolicy)
+Level1HeuristicPolicy: {'lost': 8409, 'won': 1591, 'tied': 0}; Level2HeuristicPolicy: {'lost': 1591, 'won': 8409, 'tied': 0}
+
+board size: 5x5
+player 1 (RandomPolicy) vs. player 2 (Level1HeuristicPolicy)
+RandomPolicy: {'lost': 10000, 'won': 0, 'tied': 0}; Level1HeuristicPolicy: {'lost': 0, 'won': 10000, 'tied': 0}
+
+board size: 5x5
+player 1 (RandomPolicy) vs. player 2 (Level2HeuristicPolicy)
+RandomPolicy: {'lost': 10000, 'tied': 0, 'won': 0}; Level2HeuristicPolicy: {'lost': 0, 'tied': 0, 'won': 10000}
+
+board size: 5x5
+player 1 (Level1HeuristicPolicy) vs. player 2 (Level2HeuristicPolicy)
+Level1HeuristicPolicy: {'tied': 0, 'won': 461, 'lost': 9539}; Level2HeuristicPolicy: {'tied': 0, 'won': 9539, 'lost': 461}
+
+
+    ----------------------------------------------------------------------------------------
+            | L0 2x2 | L1 2x2 | L2 2x2 | L0 3x3 | L1 3x3 | L2 3x3 | L0 5x5 | L1 5x5 | L2 5x5
+    ----------------------------------------------------------------------------------------
+     L0 2x2 |   -    |  4.40% |  3.12% |   -    |   -    |   -    |    -   |   -    |   -
+    ----------------------------------------------------------------------------------------
+     L1 2x2 | 77.61% |    -   | 12.31% |   -    |   -    |   -    |    -   |   -    |   -
+    ----------------------------------------------------------------------------------------
+     L2 2x2 | 79.95% | 54.08% |    -   |   -    |   -    |   -    |    -   |   -    |   -
+    ----------------------------------------------------------------------------------------
+     L0 3x3 |   -    |    -   |    -   |   -    | 0.31%  | 0.34%  |    -   |   -    |   -
+    ----------------------------------------------------------------------------------------
+     L1 3x3 |   -    |    -   |    -   | 99.69% |   -    | 15.91% |    -   |   -    |   -
+    ----------------------------------------------------------------------------------------
+     L2 3x3 |   -    |    -   |    -   | 99.66% | 84.09% |   -    |    -   |   -    |   -
+    ----------------------------------------------------------------------------------------
+     L0 5x5 |   -    |    -   |    -   |   -    |   -    |   -    |    -   |   0%   |   0%
+    ----------------------------------------------------------------------------------------
+     L1 5x5 |   -    |    -   |    -   |   -    |   -    |   -    |  100%  |   -    | 4.61%
+    ----------------------------------------------------------------------------------------
+     L2 5x5 |   -    |    -   |    -   |   -    |   -    |   -    |  100%  | 95.39% |   -
+    ----------------------------------------------------------------------------------------
+    Win rates of L0, L1, and L2 policies versus each other on 2x2, 3x3, and 5x5,
+     after tournaments consisting of 10,000 games each.
+    L0: A policy that selects an edge at random.
+    L1: A policy that selects an edge randomly that completes a box, if possible. Otherwise,
+        it selects an edge at random.
+    L2: A policy that selects an edge randomly that completes a box, if possible. Otherwise,
+        it selects an edge randomly that does not allow the opponent to complete a box.
+        Otherwise, it selects an edge at random.
+
+board size: 2x2
+CausalEntropicPolicy(max_sample_paths=1000) vs RandomPolicy:
+CausalEntropicPolicy: {'won': 364, 'lost': 21, 'tied': 115} -> 72.8%
+CausalEntropicPolicy(max_sample_paths=10000) vs RandomPolicy:
+CausalEntropicPolicy: {'won': 69, 'lost': 1, 'tied': 30} -> 69%
+
+board size: 2x2
+CausalEntropicPolicy(max_sample_paths=1000) vs Level1HeuristicPolicy:
+CausalEntropicPolicy: {'won': 5, 'lost': 371, 'tied': 124} -> 0.01%
+CausalEntropicPolicy(max_sample_paths=10000) vs Level1HeuristicPolicy:
+CausalEntropicPolicy: {'won': 4, 'lost': 84, 'tied': 29} -> 0.03%
+
+board size: 2x2
+MCTSPolicy(num_playouts=500, reset_tree=False) vs RandomPolicy:
+MCTSPolicy: {'won': 80, 'lost': 10, 'tied': 10} -> 80%
+MCTSPolicy(num_playouts=1500, reset_tree=False) vs RandomPolicy:
+MCTSPolicy: {'won': 82, 'lost': 9, 'tied': 9} -> 82%
+MCTSPolicy(num_playouts=500, reset_tree=True) vs RandomPolicy:
+MCTSPolicy: {'won': 83, 'lost': 9, 'tied': 8} -> 83%
+MCTSPolicy(num_playouts=1500, reset_tree=True) vs RandomPolicy:
+MCTSPolicy: {'won': 87, 'lost': 4, 'tied': 9} -> 87%
+MCTSPolicy(num_playouts=5000, reset_tree=True) vs RandomPolicy:
+MCTSPolicy: {'tied': 10, 'lost': 0, 'won': 90} -> 90%
+
+board size: 2x2
+MCTSPolicy2(num_playouts=100) vs RandomPolicy:
+MCTSPolicy2: {'lost': 9, 'won': 87, 'tied': 4} -> 87%
+MCTSPolicy2(num_playouts=500) vs RandomPolicy:
+MCTSPolicy2: {'won': 90, 'lost': 5, 'tied': 5} -> 90%
+MCTSPolicy2(num_playouts=1000) vs RandomPolicy:
+MCTSPolicy2: {'won': 88, 'lost': 3, 'tied': 9} -> 88%
+MCTSPolicy2(num_playouts=5000) vs RandomPolicy:
+MCTSPolicy2: {'won': 96, 'lost': 0, 'tied': 4} -> 96%
+
+board size: 2x2
+MCTSPolicy(num_playouts=500, reset_tree=False) vs Level1HeuristicPolicy:
+MCTSPolicy: {'won': 23, 'lost': 42, 'tied': 35} -> 23%
+MCTSPolicy(num_playouts=1500, reset_tree=False) vs Level1HeuristicPolicy:
+MCTSPolicy: {'won': 27, 'lost': 39, 'tied': 34} -> 27%
+MCTSPolicy(num_playouts=500, reset_tree=True) vs Level1HeuristicPolicy:
+MCTSPolicy: {'won': 33, 'lost': 48, 'tied': 19} -> 33%
+MCTSPolicy(num_playouts=1500, reset_tree=True) vs Level1HeuristicPolicy:
+MCTSPolicy: {'won': 43, 'lost': 39, 'tied': 18} -> 43%
+MCTSPolicy(num_playouts=3000, reset_tree=True) vs Level1HeuristicPolicy:
+MCTSPolicy: {'won': 48, 'lost': 34, 'tied': 18} -> 48%
+MCTSPolicy(num_playouts=10000, reset_tree=True) vs Level1HeuristicPolicy:
+MCTSPolicy: {'won': 53, 'lost': 31, 'tied': 16} -> 53%
+
+board size: 2x2
+MCTSPolicy2(num_playouts=5000) vs Level1HeuristicPolicy:
+MCTSPolicy2: {'lost': 13, 'tied': 30, 'won': 57} -> 57%
+MCTSPolicy2(num_playouts=10000) vs Level1HeuristicPolicy:
+MCTSPolicy2: {'lost': 2, 'won': 64, 'tied': 34} -> 64%
+MCTSPolicy2(num_playouts=50000) vs Level1HeuristicPolicy:
+MCTSPolicy2: {'lost': 8, 'won': 65, 'tied': 27} -> 65%
+
+board size: 2x2
+MCTSPolicy2(num_playouts=10000) vs Level2HeuristicPolicy:
+MCTSPolicy2: {'tied': 36, 'won': 31, 'lost': 33} -> 31%
+MCTSPolicy2(num_playouts=50000) vs Level2HeuristicPolicy:
+MCTSPolicy2: {'tied': 39, 'lost': 23, 'won': 38} -> 38%
+
+board size: 2x2
+MCTSPolicy(num_playouts=5000, reset_tree=True) vs MCTSPolicy(num_playouts=10000, reset_tree=True):
+MCTSPolicy(num_playouts=10000, reset_tree=True): {'lost': 46, 'won': 49, 'tied': 5} -> 49%
+
+board size: 2x2
+MCTSPolicy2(num_playouts=5000) vs MCTSPolicy2(num_playouts=10000):
+MCTSPolicy2(num_playouts=10000): MCTSPolicy2: {'tied': 24, 'won': 37, 'lost': 39} -> 37%
+
+
+------------------------------------------
+2x2                 |  L0  |  L1  |  L2  |
+------------------------------------------
+MCTSPolicy2 (100)   |  87% |  20% |   4% |
+MCTSPolicy2 (500)   |  90% |  32% |  18% |
+MCTSPolicy2 (1000)  |  88% |  30% |  28% |
+MCTSPolicy2 (5000)  |  96% |  57% |  27% |
+MCTSPolicy2 (10000) |      |  64% |  31% |
+MCTSPolicy2 (50000) |      |  65% |  38% |
+MCTSPolicy2 (100000)|      |      |      |
+------------------------------------------
+* after 100 games, alternating going first
+
+------------------------------------------
+3x3                 |  L0  |  L1  |  L2  |
+------------------------------------------
+MCTSPolicy2 (100)   |  90% |   7% |   3% |
+MCTSPolicy2 (500)   | 100% |  13% |  11% |
+MCTSPolicy2 (1000)  |      |      |      |
+MCTSPolicy2 (5000)  |      |      |      |
+MCTSPolicy2 (10000) |      |      |  40% |
+MCTSPolicy2 (50000) |      |  74% |  54% |
+MCTSPolicy2 (100000)|      |  82% |      |
+------------------------------------------
+* after 100 games, alternating going first
+
+------------------------------------------
+5x5                 |  L0  |  L1  |  L2  |
+------------------------------------------
+MCTSPolicy2 (100)   |  93% |   0% |      |
+MCTSPolicy2 (500)   |      |      |      |
+MCTSPolicy2 (1000)  |      |      |      |
+MCTSPolicy2 (5000)  |      |      |      |
+MCTSPolicy2 (10000) |      |      |      |
+MCTSPolicy2 (50000) |      |      |      |
+MCTSPolicy2 (100000)|      |      |      |
+------------------------------------------
+* after 100 games, alternating going first
