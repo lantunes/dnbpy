@@ -79,55 +79,6 @@ CausalEntropicPolicy: {'won': 5, 'lost': 371, 'tied': 124} -> 0.01%
 CausalEntropicPolicy(max_sample_paths=10000) vs Level1HeuristicPolicy:
 CausalEntropicPolicy: {'won': 4, 'lost': 84, 'tied': 29} -> 0.03%
 
-board size: 2x2
-MCTSPolicy(num_playouts=500, reset_tree=False) vs RandomPolicy:
-MCTSPolicy: {'won': 80, 'lost': 10, 'tied': 10} -> 80%
-MCTSPolicy(num_playouts=1500, reset_tree=False) vs RandomPolicy:
-MCTSPolicy: {'won': 82, 'lost': 9, 'tied': 9} -> 82%
-MCTSPolicy(num_playouts=500, reset_tree=True) vs RandomPolicy:
-MCTSPolicy: {'won': 83, 'lost': 9, 'tied': 8} -> 83%
-MCTSPolicy(num_playouts=1500, reset_tree=True) vs RandomPolicy:
-MCTSPolicy: {'won': 87, 'lost': 4, 'tied': 9} -> 87%
-MCTSPolicy(num_playouts=5000, reset_tree=True) vs RandomPolicy:
-MCTSPolicy: {'tied': 10, 'lost': 0, 'won': 90} -> 90%
-
-board size: 2x2
-MCTSPolicy2(num_playouts=100) vs RandomPolicy:
-MCTSPolicy2: {'lost': 9, 'won': 87, 'tied': 4} -> 87%
-MCTSPolicy2(num_playouts=500) vs RandomPolicy:
-MCTSPolicy2: {'won': 90, 'lost': 5, 'tied': 5} -> 90%
-MCTSPolicy2(num_playouts=1000) vs RandomPolicy:
-MCTSPolicy2: {'won': 88, 'lost': 3, 'tied': 9} -> 88%
-MCTSPolicy2(num_playouts=5000) vs RandomPolicy:
-MCTSPolicy2: {'won': 96, 'lost': 0, 'tied': 4} -> 96%
-
-board size: 2x2
-MCTSPolicy(num_playouts=500, reset_tree=False) vs Level1HeuristicPolicy:
-MCTSPolicy: {'won': 23, 'lost': 42, 'tied': 35} -> 23%
-MCTSPolicy(num_playouts=1500, reset_tree=False) vs Level1HeuristicPolicy:
-MCTSPolicy: {'won': 27, 'lost': 39, 'tied': 34} -> 27%
-MCTSPolicy(num_playouts=500, reset_tree=True) vs Level1HeuristicPolicy:
-MCTSPolicy: {'won': 33, 'lost': 48, 'tied': 19} -> 33%
-MCTSPolicy(num_playouts=1500, reset_tree=True) vs Level1HeuristicPolicy:
-MCTSPolicy: {'won': 43, 'lost': 39, 'tied': 18} -> 43%
-MCTSPolicy(num_playouts=3000, reset_tree=True) vs Level1HeuristicPolicy:
-MCTSPolicy: {'won': 48, 'lost': 34, 'tied': 18} -> 48%
-MCTSPolicy(num_playouts=10000, reset_tree=True) vs Level1HeuristicPolicy:
-MCTSPolicy: {'won': 53, 'lost': 31, 'tied': 16} -> 53%
-
-board size: 2x2
-MCTSPolicy2(num_playouts=5000) vs Level1HeuristicPolicy:
-MCTSPolicy2: {'lost': 13, 'tied': 30, 'won': 57} -> 57%
-MCTSPolicy2(num_playouts=10000) vs Level1HeuristicPolicy:
-MCTSPolicy2: {'lost': 2, 'won': 64, 'tied': 34} -> 64%
-MCTSPolicy2(num_playouts=50000) vs Level1HeuristicPolicy:
-MCTSPolicy2: {'lost': 8, 'won': 65, 'tied': 27} -> 65%
-
-board size: 2x2
-MCTSPolicy2(num_playouts=10000) vs Level2HeuristicPolicy:
-MCTSPolicy2: {'tied': 36, 'won': 31, 'lost': 33} -> 31%
-MCTSPolicy2(num_playouts=50000) vs Level2HeuristicPolicy:
-MCTSPolicy2: {'tied': 39, 'lost': 23, 'won': 38} -> 38%
 
 board size: 2x2
 MCTSPolicy(num_playouts=5000, reset_tree=True) vs MCTSPolicy(num_playouts=10000, reset_tree=True):
@@ -138,41 +89,57 @@ MCTSPolicy2(num_playouts=5000) vs MCTSPolicy2(num_playouts=10000):
 MCTSPolicy2(num_playouts=10000): MCTSPolicy2: {'tied': 24, 'won': 37, 'lost': 39} -> 37%
 
 
-------------------------------------------
-2x2                 |  L0  |  L1  |  L2  |
-------------------------------------------
-MCTSPolicy2 (100)   |  87% |  20% |   4% |
-MCTSPolicy2 (500)   |  90% |  32% |  18% |
-MCTSPolicy2 (1000)  |  88% |  30% |  28% |
-MCTSPolicy2 (5000)  |  96% |  57% |  27% |
-MCTSPolicy2 (10000) |      |  64% |  31% |
-MCTSPolicy2 (50000) |      |  65% |  38% |
-MCTSPolicy2 (100000)|      |      |      |
-------------------------------------------
+------------------------------------------------------------
+2x2                 |  L0        |  L1        |  L2
+------------------------------------------------------------
+MCTSPolicy2 (100)   |  87% / 82% |  20% / 24% |   4% / 11%
+MCTSPolicy2 (500)   |  90% / 89% |  32% / 33% |  18% / 17%
+MCTSPolicy2 (1000)  |  88% / 87% |  30% / 43% |  28% / 23%
+MCTSPolicy2 (5000)  |  96% / -   |  57% / -   |  27% / -
+MCTSPolicy2 (10000) |            |  64% / -   |  31% / -
+MCTSPolicy2 (50000) |            |  65% / -   |  38% / -
+MCTSPolicy2 (100000)|            |            |
+------------------------------------------------------------
+MCTSPolicy (500, F) |  80% / -   |  23% / -   |
+MCTSPolicy (1500, F)|  82% / -   |  27% / -   |
+MCTSPolicy (500, T) |  83% / -   |  33% / -   |
+MCTSPolicy (1500, T)|  87% / -   |  43% / -   |
+MCTSPolicy (3000, T)|            |  48% / -   |
+MCTSPolicy (5000, T)|  90% / -   |            |
+MCTSPolicy (10000,T)|            |  53% / -   |
+------------------------------------------------------------
 * after 100 games, alternating going first
+* MCTSPolicy2 ([num simulations])
+* MCTSPolicy ([num simulations], [reset tree: {T}rue or {F}alse])
+* MCTS selection policy: [most visited node] / [highest average wins]
 
-------------------------------------------
-3x3                 |  L0  |  L1  |  L2  |
-------------------------------------------
-MCTSPolicy2 (100)   |  90% |   7% |   3% |
-MCTSPolicy2 (500)   | 100% |  13% |  11% |
-MCTSPolicy2 (1000)  |      |      |      |
-MCTSPolicy2 (5000)  |      |      |      |
-MCTSPolicy2 (10000) |      |      |  40% |
-MCTSPolicy2 (50000) |      |  74% |  54% |
-MCTSPolicy2 (100000)|      |  82% |      |
-------------------------------------------
-* after 100 games, alternating going first
 
-------------------------------------------
-5x5                 |  L0  |  L1  |  L2  |
-------------------------------------------
-MCTSPolicy2 (100)   |  93% |   0% |      |
-MCTSPolicy2 (500)   |      |      |      |
-MCTSPolicy2 (1000)  |      |      |      |
-MCTSPolicy2 (5000)  |      |      |      |
-MCTSPolicy2 (10000) |      |      |      |
-MCTSPolicy2 (50000) |      |      |      |
-MCTSPolicy2 (100000)|      |      |      |
-------------------------------------------
+------------------------------------------------------------
+3x3                 |  L0        |  L1        |  L2
+------------------------------------------------------------
+MCTSPolicy2 (100)   |  90% / 90% |   7% / 7%  |   3% / 8%
+MCTSPolicy2 (500)   | 100% / 99% |  13% / 19% |  11% / 16%
+MCTSPolicy2 (1000)  |            |            |
+MCTSPolicy2 (5000)  |            |            |
+MCTSPolicy2 (10000) |            |            |  40% / -
+MCTSPolicy2 (50000) |            |  74% / -   |  54% / -
+MCTSPolicy2 (100000)|            |  82% / -   |
+------------------------------------------------------------
 * after 100 games, alternating going first
+* MCTSPolicy2 ([num simulations])
+* MCTS selection policy: [most visited node] / [highest average wins]
+
+------------------------------------------------------
+5x5                 |  L0      |  L1      |  L2
+------------------------------------------------------
+MCTSPolicy2 (100)   |  93% / - |   0% / - |
+MCTSPolicy2 (500)   |          |          |
+MCTSPolicy2 (1000)  |          |          |
+MCTSPolicy2 (5000)  |          |          |
+MCTSPolicy2 (10000) |          |          |
+MCTSPolicy2 (50000) |          |          |
+MCTSPolicy2 (100000)|          |          |
+------------------------------------------------------
+* after 100 games, alternating going first
+* MCTSPolicy2 ([num simulations])
+* MCTS selection policy: [most visited node] / [highest average wins]
