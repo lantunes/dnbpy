@@ -8,10 +8,12 @@ class PGPolicyCNN2(Policy):
     """
     Adds a second convolutional layer.
     """
-    def __init__(self, board_size, batch_size=1):
+    def __init__(self, board_size, batch_size=1, existing_params=None):
         self._sess = tf.Session()
         self._board_size = board_size
         self._batch_size = batch_size
+        self._epsilon = 0.0
+        self._temperature = 0.0
 
         edge_matrix = init_edge_matrix(board_size)
         self._n_input_rows = edge_matrix.shape[0]
@@ -19,63 +21,79 @@ class PGPolicyCNN2(Policy):
         self._n_hidden = 300
         self._n_output = len(init_board_state(board_size))
 
-        self._input = tf.placeholder("float", [None, self._n_input_rows, self._n_input_cols], name="input")
-        self._action_taken = tf.placeholder("float", [None, self._n_output], name="action_taken")
-        self._outcome = tf.placeholder(tf.float32, (None, 1), name="outcome")
-        self._lr = tf.placeholder("float", shape=[], name="learning_rate")
+        # TF graph creation
+        g = tf.Graph()
+        with g.as_default():
+            self._input = tf.placeholder("float", [None, self._n_input_rows, self._n_input_cols], name="input")
+            self._action_taken = tf.placeholder("float", [None, self._n_output], name="action_taken")
+            self._outcome = tf.placeholder(tf.float32, (None, 1), name="outcome")
+            self._lr = tf.placeholder("float", shape=[], name="learning_rate")
 
-        self._W_in = tf.Variable(tf.random_normal([3 * 3 * 24, self._n_hidden], 0.0, 0.1), name="W_in")
-        self._b_in = tf.Variable(tf.zeros([self._n_hidden]), name="b_in")
-        self._W_out = tf.Variable(tf.random_normal([self._n_hidden, self._n_output], 0.0, 0.1), name="W_out")
+            W_in_initializer = existing_param_initializer(existing_params, "W_in", tf.random_normal_initializer(0.0, 0.1))
+            b_in_initializer = existing_param_initializer(existing_params, "b_in", tf.zeros_initializer())
+            W_out_initializer = existing_param_initializer(existing_params, "W_out", tf.random_normal_initializer(0.0, 0.1))
+            conv_kernel_initializer = existing_param_initializer(existing_params, "conv2d/kernel:0", tf.random_normal_initializer(0.0, 0.1))
+            conv_bias_initializer = existing_param_initializer(existing_params, "conv2d/bias:0", tf.zeros_initializer())
+            conv_kernel2_initializer = existing_param_initializer(existing_params, "conv2d_1/kernel:0", tf.random_normal_initializer(0.0, 0.1))
+            conv_bias2_initializer = existing_param_initializer(existing_params, "conv2d_1/bias:0", tf.zeros_initializer())
 
-        self._input_reshaped = tf.reshape(self._input, shape=[tf.shape(self._input)[0], self._n_input_rows, self._n_input_cols, 1])
+            self._W_in = tf.get_variable(shape=[3 * 3 * 24, self._n_hidden], initializer=W_in_initializer, name="W_in")
+            self._b_in = tf.get_variable(shape=[self._n_hidden], initializer=b_in_initializer, name="b_in")
+            self._W_out = tf.get_variable(shape=[self._n_hidden, self._n_output], initializer=W_out_initializer, name="W_out")
 
-        # Convolutional Layer 1
-        # Computes 12 features using a 3x3 filter with ReLU activation.
-        # Padding is added to preserve width and height.
-        # Input Tensor Shape (for the 2x2 board): [None, 5, 5, 1] (batch size, width, height, channels)
-        # Output Tensor Shape: [None, 5, 5, 12]
-        self._conv = tf.layers.conv2d(
-            inputs=self._input_reshaped,
-            filters=12,
-            kernel_size=[3, 3],
-            strides=(1, 1),
-            padding="same",
-            kernel_initializer=tf.random_normal_initializer(0.0, 0.1),
-            activation=tf.nn.relu)
+            self._input_reshaped = tf.reshape(self._input, shape=[tf.shape(self._input)[0], self._n_input_rows, self._n_input_cols, 1])
 
-        # Convolutional Layer 2
-        # Computes 24 features using a 3x3 filter with ReLU activation.
-        # No padding is added.
-        # Input Tensor Shape: [None, 5, 5, 12]
-        # Output Tensor Shape: [None, 3, 3, 24]
-        self._conv2 = tf.layers.conv2d(
-            inputs=self._conv,
-            filters=24,
-            kernel_size=[3, 3],
-            strides=(1, 1),
-            kernel_initializer=tf.random_normal_initializer(0.0, 0.1),
-            activation=tf.nn.relu)
+            # Convolutional Layer 1
+            # Computes 12 features using a 3x3 filter with ReLU activation.
+            # Padding is added to preserve width and height.
+            # Input Tensor Shape (for the 2x2 board): [None, 5, 5, 1] (batch size, width, height, channels)
+            # Output Tensor Shape: [None, 5, 5, 12]
+            self._conv = tf.layers.conv2d(
+                inputs=self._input_reshaped,
+                filters=12,
+                kernel_size=[3, 3],
+                strides=(1, 1),
+                padding="same",
+                kernel_initializer=conv_kernel_initializer,
+                bias_initializer=conv_bias_initializer,
+                activation=tf.nn.relu)
 
-        self._conv_flat = tf.reshape(self._conv2, [tf.shape(self._input)[0], 3 * 3 * 24])
+            # Convolutional Layer 2
+            # Computes 24 features using a 3x3 filter with ReLU activation.
+            # No padding is added.
+            # Input Tensor Shape: [None, 5, 5, 12]
+            # Output Tensor Shape: [None, 3, 3, 24]
+            self._conv2 = tf.layers.conv2d(
+                inputs=self._conv,
+                filters=24,
+                kernel_size=[3, 3],
+                strides=(1, 1),
+                kernel_initializer=conv_kernel2_initializer,
+                bias_initializer=conv_bias2_initializer,
+                activation=tf.nn.relu)
 
-        dense_layer = tf.nn.tanh(tf.matmul(self._conv_flat, self._W_in) + self._b_in)
+            self._conv_flat = tf.reshape(self._conv2, [tf.shape(self._input)[0], 3 * 3 * 24])
 
-        self._action_probs = tf.nn.softmax(tf.matmul(dense_layer, self._W_out))
+            dense_layer = tf.nn.tanh(tf.matmul(self._conv_flat, self._W_in) + self._b_in)
 
-        self._cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-            logits=tf.matmul(dense_layer, self._W_out), labels=self._action_taken)
-        self._loss = self._cross_entropy * self._outcome
-        if self._batch_size > 1:
-            self._loss = tf.reduce_mean(self._loss)
-        self._train_op = tf.train.GradientDescentOptimizer(self._lr).minimize(self._loss)
+            self._action_probs = tf.nn.softmax(tf.matmul(dense_layer, self._W_out))
 
-        self._conv2d_kernel = [v for v in tf.global_variables() if v.name == 'conv2d/kernel:0'][0]
-        self._conv2d_bias = [v for v in tf.global_variables() if v.name == 'conv2d/bias:0'][0]
-        self._conv2d_kernel2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/kernel:0'][0]
-        self._conv2d_bias2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/bias:0'][0]
+            self._cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                logits=tf.matmul(dense_layer, self._W_out), labels=self._action_taken)
+            self._loss = self._cross_entropy * self._outcome
+            if self._batch_size > 1:
+                self._loss = tf.reduce_mean(self._loss)
+            self._train_op = tf.train.GradientDescentOptimizer(self._lr).minimize(self._loss)
 
-        self._sess.run(tf.global_variables_initializer())
+            self._conv2d_kernel = [v for v in tf.global_variables() if v.name == 'conv2d/kernel:0'][0]
+            self._conv2d_bias = [v for v in tf.global_variables() if v.name == 'conv2d/bias:0'][0]
+            self._conv2d_kernel2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/kernel:0'][0]
+            self._conv2d_bias2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/bias:0'][0]
+
+        # TF session creation and initialization
+        self._sess = tf.Session(graph=g)
+        with g.as_default():
+            self._sess.run(tf.global_variables_initializer())
 
     def get_architecture(self):
         return "5x5-conv(3x3, relu, 12)-conv(3x3, relu, 24)-tanh(300)-softmax(1)"
@@ -102,14 +120,18 @@ class PGPolicyCNN2(Policy):
             selected_index = np.random.choice(zero_indices, p=boltzmann(np.array(legal_normalized_probs), self._temperature))
             return selected_index
         else:
-            # return the legal action with the highest prob
-            highest_prob_index = random.choice(zero_indices)
-            highest_prob = action_probs[highest_prob_index]
-            for i, p in enumerate(action_probs):
-                if i in zero_indices and p > highest_prob:
-                    highest_prob_index = i
-                    highest_prob = p
-            return highest_prob_index
+            if random.random() < self._epsilon:
+                # do epsilon greedy action
+                return random.choice(zero_indices)
+            else:
+                # return the legal action with the highest prob
+                highest_prob_index = random.choice(zero_indices)
+                highest_prob = action_probs[highest_prob_index]
+                for i, p in enumerate(action_probs):
+                    if i in zero_indices and p > highest_prob:
+                        highest_prob_index = i
+                        highest_prob = p
+                return highest_prob_index
 
     def _softmax(self, x):
         e_x = np.exp(x - np.max(x))
@@ -126,6 +148,12 @@ class PGPolicyCNN2(Policy):
 
     def set_boltzmann_action(self, is_boltzmann_action):
         self._boltzmann_action = is_boltzmann_action
+
+    def get_epsilon(self):
+        return self._epsilon
+
+    def set_epsilon(self, eps):
+        self._epsilon = eps
 
     def get_learning_rate(self):
         return self._learning_rate
@@ -151,6 +179,31 @@ class PGPolicyCNN2(Policy):
     def _minibatches(self, samples, batch_size):
         for i in range(0, len(samples), batch_size):
             yield samples[i:i + batch_size]
+
+    def get_params(self):
+        params_map = {}
+        params = self._sess.run([self._W_in])
+        params_map["W_in"] = params[0].tolist()
+        params = self._sess.run([self._b_in])
+        params_map["b_in"] = params[0].tolist()
+        params = self._sess.run([self._W_out])
+        params_map["W_out"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_kernel])
+        params_map["conv2d/kernel:0"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_bias])
+        params_map["conv2d/bias:0"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_kernel2])
+        params_map["conv2d_1/kernel:0"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_bias2])
+        params_map["conv2d_1/bias:0"] = params[0].tolist()
+        return params_map
+
+    def copy(self):
+        policy_copy = type(self)(self._board_size, self._batch_size, self.get_params())
+        policy_copy.set_temperature(self.get_temperature())
+        policy_copy.set_epsilon(self.get_epsilon())
+        policy_copy.set_boltzmann_action(self.is_boltzmann_action())
+        return policy_copy
 
     def print_params(self, f):
         params = self._sess.run([self._W_in])
