@@ -137,8 +137,6 @@ class _Node:
         return selected_child_node
 
     def ucb1(self):
-        # if self.parent.visits == 0:
-        #     return 0
         if self.visits == 0:
             return math.inf
         return self.wins/self.visits + sqrt(2*log(self.parent.visits)/self.visits)
