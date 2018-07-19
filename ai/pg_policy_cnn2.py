@@ -8,12 +8,13 @@ class PGPolicyCNN2(Policy):
     """
     Adds a second convolutional layer.
     """
-    def __init__(self, board_size, batch_size=1, existing_params=None):
+    def __init__(self, board_size, batch_size=1, existing_params=None, dropout_keep_prob=1.0):
         self._sess = tf.Session()
         self._board_size = board_size
         self._batch_size = batch_size
         self._epsilon = 0.0
         self._temperature = 0.0
+        self._dropout_keep_prob = dropout_keep_prob
 
         edge_matrix = init_edge_matrix(board_size)
         self._n_input_rows = edge_matrix.shape[0]
@@ -28,6 +29,7 @@ class PGPolicyCNN2(Policy):
             self._action_taken = tf.placeholder("float", [None, self._n_output], name="action_taken")
             self._outcome = tf.placeholder(tf.float32, (None, 1), name="outcome")
             self._lr = tf.placeholder("float", shape=[], name="learning_rate")
+            self._keep_prob = tf.placeholder(tf.float32)
 
             W_in_initializer = existing_param_initializer(existing_params, "W_in", tf.random_normal_initializer(0.0, 0.1))
             b_in_initializer = existing_param_initializer(existing_params, "b_in", tf.zeros_initializer())
@@ -76,7 +78,9 @@ class PGPolicyCNN2(Policy):
 
             dense_layer = tf.nn.tanh(tf.matmul(self._conv_flat, self._W_in) + self._b_in)
 
-            self._action_probs = tf.nn.softmax(tf.matmul(dense_layer, self._W_out))
+            drop_out = tf.nn.dropout(dense_layer, self._keep_prob)
+
+            self._action_probs = tf.nn.softmax(tf.matmul(drop_out, self._W_out))
 
             self._cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
                 logits=tf.matmul(dense_layer, self._W_out), labels=self._action_taken)
@@ -100,7 +104,10 @@ class PGPolicyCNN2(Policy):
 
     def select_edge(self, board_state):
         edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
-        action_probs = self._sess.run([self._action_probs], feed_dict={self._input: [edge_matrix]})
+        action_probs = self._sess.run([self._action_probs], feed_dict={
+            self._input: [edge_matrix],
+            self._keep_prob: 1.0
+        })
         # convert to 12D ndarray
         action_probs = action_probs[0][0]
 
@@ -173,7 +180,8 @@ class PGPolicyCNN2(Policy):
                 self._input:        states,
                 self._action_taken: actions,
                 self._outcome:      outcomes,
-                self._lr:           self._learning_rate
+                self._lr:           self._learning_rate,
+                self._keep_prob:    self._dropout_keep_prob
             })
 
     def _minibatches(self, samples, batch_size):
