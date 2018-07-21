@@ -2,6 +2,7 @@ from ai import *
 from dnbpy import *
 import tensorflow as tf
 import numpy as np
+from util.initializer_util import *
 
 
 class PGPolicyCNN2(Policy):
@@ -221,10 +222,10 @@ class PGPolicyCNN2(Policy):
         params = self._sess.run([self._W_out])
         f.write("W_out: %s\n" % params[0].tolist())
         params = self._sess.run([self._conv2d_kernel])
-        f.write("conv2d_kernel: %s\n" % params[0].tolist())
+        f.write("conv2d/kernel:0: %s\n" % params[0].tolist())
         params = self._sess.run([self._conv2d_bias])
-        f.write("conv2d_bias: %s\n" % params[0].tolist())
+        f.write("conv2d/bias:0: %s\n" % params[0].tolist())
         params = self._sess.run([self._conv2d_kernel2])
-        f.write("conv2d_kernel2: %s\n" % params[0].tolist())
+        f.write("conv2d_1/kernel:0: %s\n" % params[0].tolist())
         params = self._sess.run([self._conv2d_bias2])
-        f.write("conv2d_bias2: %s\n" % params[0].tolist())
+        f.write("conv2d_1/bias:0: %s\n" % params[0].tolist())
