@@ -2,6 +2,7 @@ import sys
 
 import dnbpy
 import ai
+from util.initializer_util import read_params
 
 
 def main():
@@ -39,20 +40,27 @@ def main():
 
     L2 = ai.Level2HeuristicPolicy((board_rows, board_cols))
 
+    pg_params = read_params('resources/pg_2x2_cnn2_vs_L0_L1_L2_batch_01-episode-1496000.txt')
+    pg_model = ai.PGPolicyCNN2((board_rows, board_cols), existing_params=pg_params)
+    pg_model.set_boltzmann_action(False)
+    pg_model.set_epsilon(0.0)
+
+    MCTS_PG = ai.MCTSPolicy2((board_rows, board_cols), num_playouts=1000, default_policy=pg_model)
+
     game = dnbpy.Game((board_rows, board_cols), players)
     print(game)
     while not game.is_finished():
         current_player = game.get_current_player()
 
-        if current_player == "$random":
+        if current_player == "$L0":
             move = dnbpy.RandomPolicy().select_edge(game.get_board_state())
             current_player, _ = game.select_edge(move, current_player)
             print("computer player selects edge %s" % move)
-        elif current_player == "$td0":
+        elif current_player == "$TD0":
             move = td0.select_edge(game.get_board_state())
             current_player, _ = game.select_edge(move, current_player)
             print("computer player selects edge %s" % move)
-        elif current_player == "$td1":
+        elif current_player == "$TD1":
             move = td1.select_edge(game.get_board_state())
             current_player, _ = game.select_edge(move, current_player)
             print("computer player selects edge %s" % move)
@@ -62,6 +70,14 @@ def main():
             print("computer player selects edge %s" % move)
         elif current_player == "$L2":
             move = L2.select_edge(game.get_board_state())
+            current_player, _ = game.select_edge(move, current_player)
+            print("computer player selects edge %s" % move)
+        elif current_player == "$PG":
+            move = pg_model.select_edge(game.get_board_state())
+            current_player, _ = game.select_edge(move, current_player)
+            print("computer player selects edge %s" % move)
+        elif current_player == "$MCTS-PG":
+            move = MCTS_PG.select_edge(game.get_board_state(), game.get_score(current_player))
             current_player, _ = game.select_edge(move, current_player)
             print("computer player selects edge %s" % move)
         else:
