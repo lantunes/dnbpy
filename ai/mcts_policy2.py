@@ -5,15 +5,17 @@ import math
 
 
 class MCTSPolicy2:
-    def __init__(self, board_size, num_playouts):
+    def __init__(self, board_size, num_playouts, c=sqrt(2), default_policy=None):
         self._board_size = board_size
         self._num_playouts = num_playouts
+        self._c = c
+        self._default_policy = default_policy
 
     def set_num_playouts(self, num_playouts):
         self._num_playouts = num_playouts
 
     def select_edge(self, board_state, root_player_score):
-        root_node = _Node(board_state)
+        root_node = _Node(board_state, self._c)
 
         # Perform playouts
         for i in range(self._num_playouts):
@@ -45,12 +47,15 @@ class MCTSPolicy2:
                     opponent_states.append(move_state)
                 selected_index = self._get_selected_index(move_state, node.state)
                 current_player = game.select_edge(selected_index, current_player)
-                node = node.add_child(move_state)
+                node = node.add_child(move_state, self._c)
 
             # Rollout
             current_board_state = game.get_board_state()
             while not game.is_finished():
-                next_index = self._select_next_move_randomly(current_board_state)
+                if self._default_policy is None:
+                    next_index = self._select_next_move_randomly(current_board_state)
+                else:
+                    next_index = self._default_policy.select_edge(current_board_state)
                 current_player = game.select_edge(next_index, current_player)
                 current_board_state = game.get_board_state()
 
@@ -84,8 +89,9 @@ class MCTSPolicy2:
 
 
 class _Node:
-    def __init__(self, state, parent=None):
+    def __init__(self, state, c, parent=None):
         self.state = state
+        self._c = c
         self.wins = 0
         self.visits = 0
         self.parent = parent
@@ -117,8 +123,8 @@ class _Node:
     def select_untried_move(self):
         return random.choice(self.untried_moves)
 
-    def add_child(self, child_state):
-        child = _Node(child_state, self)
+    def add_child(self, child_state, c):
+        child = _Node(child_state, c, parent=self)
         self.children.append(child)
         self.untried_moves.remove(child_state)
         return child
@@ -139,4 +145,4 @@ class _Node:
     def ucb1(self):
         if self.visits == 0:
             return math.inf
-        return self.wins/self.visits + sqrt(2*log(self.parent.visits)/self.visits)
+        return self.wins/self.visits + self._c*sqrt(log(self.parent.visits)/self.visits)
