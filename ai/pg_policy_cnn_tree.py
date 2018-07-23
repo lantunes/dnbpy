@@ -8,20 +8,32 @@ from Tree_cnn import *
 import os
 
 
-class PGPolicyCNN2Ali(Policy):
+class PGPolicyCNN2Tree(Policy):
     """
     Adds a second convolutional layer.
     """
     def __init__(self, board_size, batch_size=1):
         #self._sess = tf.Session()
-        self._board_size = board_size
+        self._board_size_tree_cnn = board_size
+        self._board_size = (2,2)
         self._batch_size = batch_size
 
-        edge_matrix = init_edge_matrix(board_size)
-        self._n_input_rows = edge_matrix.shape[0]
-        self._n_input_cols = edge_matrix.shape[1]
+        edge_matrix = init_edge_matrix(self._board_size_tree_cnn)
+        edge_matrix_base = init_edge_matrix(self._board_size)
+        self._n_input_rows_tree_cnn = edge_matrix.shape[0]
+        self._n_input_cols_tree_cnn = edge_matrix.shape[1]
+
+        self._n_input_rows_base_cnn = edge_matrix_base.shape[0]
+        self._n_input_cols_base_cnn = edge_matrix_base.shape[1]
+
         self._n_hidden = 300
         self._n_hidden_tree_cnn = 300
+        self._n_filters_layer1_tree_cnn = 12
+        self._n_filters_layer2_tree_cnn = 24
+
+        self._n_kernel_size_layer1_tree_cnn = [2,2]
+        self._n_kernel_size_layer2_tree_cnn = [2,2]
+
         self._n_output = len(init_board_state(board_size))
         self.init_base_CNN_graph()
         self.init_tree_CNN_graph()
@@ -29,25 +41,35 @@ class PGPolicyCNN2Ali(Policy):
 
 
     def init_tree_CNN_graph(self):
+        """
+        :Initializes Graph for tree_CNN
+        :return:
+        """
         self.graph_tree_cnn = tf.Graph()
         with self.graph_tree_cnn.as_default():
+            #Input: an N by 4 matrix where N denotes the size of embedding
             self._input_tree_cnn = tf.placeholder("float", [None, self._n_hidden, 4], name="input_tree_cnn")
             self._input_reshaped_tree_cnn = tf.reshape(self._input_tree_cnn,
                                               shape=[tf.shape(self._input_tree_cnn)[0], self._n_hidden, 4,
                                                      1])
             self._action_taken_tree_cnn = tf.placeholder("float", [None, self._n_output], name="action_taken_tree_cnn")
-            self._outcome = tf.placeholder(tf.float32, (None, 1), name="outcome")
+            self._outcome = tf.placeholder(tf.float32, (None, 1), name="outcome_tree_cnn")
             self._lr = tf.placeholder("float", shape=[], name="learning_rate")
 
-            self._W_in_tree_cnn = tf.Variable(tf.random_normal([2 * 2 * 24, self._n_hidden_tree_cnn], 0.0, 0.1), name="W_in_tree_cnn")
+            #dimension of flattened layer: number_of_filters*(dim_x_input - kernel_size)*(dim_y_input-kernel_size) because there is no padding
+            dim_flatten_layer = (self._n_hidden-self._n_kernel_size_layer2_tree_cnn[0]+1)*(4-self._n_kernel_size_layer2_tree_cnn[1]+1) * 24
+
+            self._W_in_tree_cnn = tf.Variable(tf.random_normal
+                                              ([dim_flatten_layer, self._n_hidden_tree_cnn], 0.0, 0.1), name="W_in_tree_cnn")
+
             self._b_in_tree_cnn = tf.Variable(tf.zeros([self._n_hidden_tree_cnn]), name="b_in_tree_cnn")
             self._W_out_tree_cnn = tf.Variable(tf.random_normal([self._n_hidden_tree_cnn, self._n_output], 0.0, 0.1), name="W_out_tree_cnn")
 
             #First conv layer: applies to an N by 4 matrix of embedding with N being the size of embedding
             self._conv_tree_cnn = tf.layers.conv2d(
                 inputs=self._input_reshaped_tree_cnn,
-                filters=12,
-                kernel_size=[2, 2],
+                filters=self._n_filters_layer1_tree_cnn,
+                kernel_size=self._n_kernel_size_layer1_tree_cnn,
                 strides=(1, 1),
                 padding="same",
                 kernel_initializer=tf.random_normal_initializer(0.0, 0.1),
@@ -56,15 +78,17 @@ class PGPolicyCNN2Ali(Policy):
             #Second conv layer:
             self._conv2_tree_cnn = tf.layers.conv2d(
                 inputs=self._conv_tree_cnn,
-                filters=24,
-                kernel_size=[2, 2],
+                filters=self._n_filters_layer2_tree_cnn,
+                kernel_size=self._n_kernel_size_layer2_tree_cnn,
                 strides=(1, 1),
                 kernel_initializer=tf.random_normal_initializer(0.0, 0.1),
                 activation=tf.nn.relu)
 
-            self._conv_flat_tree_cnn = tf.reshape(self._conv2_tree_cnn, [tf.shape(self._input)[0], 2 * 2 * 24])
+            self._conv_flat_tree_cnn = tf.reshape(self._conv2_tree_cnn,
+                                                  [tf.shape(self._input_tree_cnn)[0], dim_flatten_layer])
 
             dense_layer = tf.nn.tanh(tf.matmul(self._conv_flat_tree_cnn, self._W_in_tree_cnn) + self._b_in_tree_cnn)
+            self._embed_tree_cnn = dense_layer
 
             self._action_probs_tree_cnn = tf.nn.softmax(tf.matmul(dense_layer, self._W_out_tree_cnn))
 
@@ -75,7 +99,7 @@ class PGPolicyCNN2Ali(Policy):
     def init_base_CNN_graph(self):
         self.graph_base_cnn = tf.Graph()
         with self.graph_base_cnn.as_default():
-            self._input = tf.placeholder("float", [None, self._n_input_rows, self._n_input_cols], name="input")
+            self._input = tf.placeholder("float", [None, self._n_input_rows_base_cnn, self._n_input_cols_base_cnn], name="input")
             self._action_taken = tf.placeholder("float", [None, self._n_output], name="action_taken")
             #self._outcome = tf.placeholder(tf.float32, (None, 1), name="outcome")
             #self._lr = tf.placeholder("float", shape=[], name="learning_rate")
@@ -85,7 +109,7 @@ class PGPolicyCNN2Ali(Policy):
             self._W_out = tf.Variable(tf.random_normal([self._n_hidden, self._n_output], 0.0, 0.1), name="W_out")
 
             self._input_reshaped = tf.reshape(self._input,
-                                              shape=[tf.shape(self._input)[0], self._n_input_rows, self._n_input_cols,
+                                              shape=[tf.shape(self._input)[0], self._n_input_rows_base_cnn, self._n_input_cols_base_cnn,
                                                      1])
 
             # Convolutional Layer 1
@@ -122,17 +146,19 @@ class PGPolicyCNN2Ali(Policy):
             self._action_probs = tf.nn.softmax(tf.matmul(dense_layer, self._W_out))
             self._embed = dense_layer
 
-            self._cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-                logits=tf.matmul(dense_layer, self._W_out), labels=self._action_taken)
-            self._loss = self._cross_entropy * self._outcome
-            if self._batch_size > 1:
-                self._loss = tf.reduce_mean(self._loss)
-            self._train_op = tf.train.GradientDescentOptimizer(self._lr).minimize(self._loss)
 
-            self._conv2d_kernel = [v for v in tf.global_variables() if v.name == 'conv2d/kernel:0'][0]
-            self._conv2d_bias = [v for v in tf.global_variables() if v.name == 'conv2d/bias:0'][0]
-            self._conv2d_kernel2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/kernel:0'][0]
-            self._conv2d_bias2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/bias:0'][0]
+
+            #self._cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+             #   logits=tf.matmul(dense_layer, self._W_out), labels=self._action_taken)
+            #self._loss = self._cross_entropy * self._outcome
+            #if self._batch_size > 1:
+             #   self._loss = tf.reduce_mean(self._loss)
+            #self._train_op = tf.train.GradientDescentOptimizer(self._lr).minimize(self._loss)
+
+            #self._conv2d_kernel = [v for v in tf.global_variables() if v.name == 'conv2d/kernel:0'][0]
+            #self._conv2d_bias = [v for v in tf.global_variables() if v.name == 'conv2d/bias:0'][0]
+            #self._conv2d_kernel2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/kernel:0'][0]
+            #self._conv2d_bias2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/bias:0'][0]
 
             self._sess = tf.Session(graph=self.graph_base_cnn)
             self._sess.run(tf.global_variables_initializer())
@@ -169,26 +195,62 @@ class PGPolicyCNN2Ali(Policy):
         base_cnn_embedding = self._sess.run(self._embed, feed_dict={self._input: input})
         return (base_cnn_embedding)
 
-    def select_edge(self, board_state):
-        edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
-        #extract all leaves
-        save_all_ranges = [[[0, self._board_size[0]], [0, self._board_size[0]]]]
-        save_all_ranges = gen_sub_boards(save_all_ranges) #This generates the list of all leaves
-        #Loop over the leaves and generate
-        embed_holder = []
-        for sub_slice in save_all_ranges:
-            sub_edge_matrix = get_sub_edge_matrix(edge_matrix,sub_slice)
-            #Calculate embedding for base CNN
-            base_cnn_embedding = self.graph_base_cnn(np.array(sub_edge_matrix))
-            base_cnn_embedding = np.reshape(base_cnn_embedding,np.shape(base_cnn_embedding)+(1,))
-            embed_holder.append(base_cnn_embedding)
-            if len(embed_holder)==4:
-                #Convert this to a form that can be consumed by CNN
-                input_to_parent = np.concatenate(embed_holder,axis=2)
-                #Use Tree-CNN to map to another embedding
-                embed_holder = []
+    def get_tree_cnn_embed(self,input):
 
-        action_probs = self._sess.run([self._embed], feed_dict={self._input: [edge_matrix]})
+        tree_cnn_embedding = self._sess_tree_cnn.run(self._embed_tree_cnn,feed_dict = {self._input_tree_cnn: input})
+        return (tree_cnn_embedding)
+
+    def select_edge(self, board_state):
+        """
+        :Selects a new edge based on both treeCNN and baseCNN models
+        :param board_state: the current string state of the board
+        :return:
+        """
+
+        #Convert board_state to the edge-matrix
+        edge_matrix = convert_board_state_to_edge_matrix(self._board_size_tree_cnn, board_state)
+        #Extract all the leaves of the tree (all 2 by 2 sub-blocks)
+        save_all_ranges = [[[0, self._board_size_tree_cnn[0]], [0, self._board_size_tree_cnn[0]]]]
+        save_all_ranges = gen_sub_boards(save_all_ranges)
+        #save_all_range: a list of indexed where each entry denoted a 2 by 2 sub-block of the baord
+
+        base_embed_holder = [] #to store embedding for base-CNN
+        tree_embed_queue = [] #to store embedding for tree-CNN
+
+        #Loop over all the leaves and generate embedding for the first-level parent
+        for sub_slice in save_all_ranges:
+            sub_edge_matrix = np.array(get_sub_edge_matrix(np.array(edge_matrix),sub_slice))
+            #Calculate embedding for base CNN
+            sub_edge_matrix = np.reshape(sub_edge_matrix,(1,)+np.shape(sub_edge_matrix))
+            base_cnn_embedding = self.get_base_cnn_embed(np.array(sub_edge_matrix))
+            base_cnn_embedding = np.reshape(base_cnn_embedding,np.shape(base_cnn_embedding)+(1,))
+            base_embed_holder.append(base_cnn_embedding)
+
+            if len(base_embed_holder)==4:
+                #Convert this to a form that can be consumed by CNN
+                input_to_parent = np.concatenate(base_embed_holder,axis=2)
+                #Generate embedding for the parent
+                parent_cnn_embediding = self.get_tree_cnn_embed(input_to_parent)
+                #Use Tree-CNN to map to another embedding
+                tree_embed_queue.append(parent_cnn_embediding)
+                base_embed_holder = []
+
+        #Bottom-up traversal in the created embedding (This will go up to the tree till getting to the root)
+
+        temp_embed_holder = []
+        while len(tree_embed_queue)>0:
+            node_embed = np.reshape(tree_embed_queue[0],np.shape(tree_embed_queue[0])+(1,))
+            tree_embed_queue  = tree_embed_queue[1:]
+            temp_embed_holder.append(node_embed)
+            if len(temp_embed_holder)==4:
+                input_to_parent = np.concatenate(temp_embed_holder,axis=2)
+                parent_cnn_embediding = self.get_tree_cnn_embed(input_to_parent)
+                tree_embed_queue = tree_embed_queue + [parent_cnn_embediding]
+                temp_embed_holder = []
+
+        root_embedding = node_embed[:,:,0] #This is the final embedding (the embedding of root)
+
+        action_probs = self._sess_tree_cnn.run([self._action_probs_tree_cnn], feed_dict={self._input: [root_embedding]})
         # convert to 12D ndarray
         action_probs = action_probs[0][0]
 
