@@ -48,7 +48,10 @@ class PGPolicyCNN2Tree(Policy):
         self.graph_tree_cnn = tf.Graph()
         with self.graph_tree_cnn.as_default():
             #Input: an N by 4 matrix where N denotes the size of embedding
-            self._input_tree_cnn = tf.placeholder("float", [None, self._n_hidden, 4], name="input_tree_cnn")
+            self._input_tree_cnn = tf.Variable(tf.random_normal
+                                              ([self._batch_size, self._n_hidden, 4], 0.0, 0.1), name="input_tree_cnn")
+
+            #self._input_tree_cnn = tf.placeholder("float", [None, self._n_hidden, 4], name="input_tree_cnn")
             num_leaves = np.power(4,(self._board_size_tree_cnn[0]-self._board_size[0]))
 
             self._input_tree_cnn_for_test = [tf.placeholder("float", [None, self._n_hidden,1], name="input_tree_cnn") for n in range(0,num_leaves)]
@@ -93,7 +96,7 @@ class PGPolicyCNN2Tree(Policy):
             #dense_layer = tf.nn.tanh(tf.matmul(self._conv_flat_tree_cnn, self._W_in_tree_cnn) + self._b_in_tree_cnn)
             #self._embed_tree_cnn = dense_layer
 
-            self._action_probs_tree_cnn = tf.nn.softmax(tf.matmul(dense_layer, self._W_out_tree_cnn))
+            #self._action_probs_tree_cnn = tf.nn.softmax(tf.matmul(dense_layer, self._W_out_tree_cnn))
 
             self._gen_embedding = self.gen_embbedding(self._input_tree_cnn_for_test)
 
@@ -110,27 +113,37 @@ class PGPolicyCNN2Tree(Policy):
         :param x: List of base embeddings
         :return:
         """
-        temp_embed_holder = []
-        while len(x)>0:
+
+        out_for_test = []
+        temp_embed_holder = [x[0]]
+        leaf_index = 1
+        while len(temp_embed_holder)>0:
             #node_embed = tf.reshape(x[0], np.shape(tree_embed_queue[0]) + (1,))
-            node_embed = x[0]
-            x = x[1:] #remove the current node
-            temp_embed_holder.append(node_embed)
+            #node_embed = x[0]
+            #x = x[1:] #remove the current node
+            #temp_embed_holder.append(node_embed)
             if len(temp_embed_holder) == 4:
                 input_to_parent = tf.concat(temp_embed_holder, axis=2) #form a size_embed
+                self._input_tree_cnn = input_to_parent
+                self._input_reshaped_tree_cnn = tf.reshape(self._input_tree_cnn,
+                                                           shape=[tf.shape(self._input_tree_cnn)[0], self._n_hidden, 4,
+                                                                  1])
+                out_for_test.append(self._input_tree_cnn)
                 #self._input_tree_cnn = input_to_parent
                 #generate embbedding based on the tree-cnn model
+                #out =self._conv2_tree_cnn
                 conv_flat_tree_cnn = tf.reshape(self._conv2_tree_cnn,
-                                                      [tf.shape(input_to_parent)[0], self.dim_flatten_layer])
-                dense_layer = tf.nn.tanh(tf.matmul(conv_flat_tree_cnn, self._W_in_tree_cnn) + self._b_in_tree_cnn)
+                                                      [tf.shape(self._input_reshaped_tree_cnn)[0], self.dim_flatten_layer])
+                dense_layer = tf.nn.tanh(tf.matmul(conv_flat_tree_cnn, self._W_in_tree_cnn) + self._b_in_tree_cnn) #This is the embedding of each node
+                temp_embed_holder = temp_embed_holder + [dense_layer]
+            else:
+                temp_embed_holder.append(x[leaf_index])
 
-                #out = self.get_tree_cnn_embed(input_to_parent)
+            leaf_index+=1
 
-                #parent_cnn_embediding = self._embed_tree_cnn
-                #tree_embed_queue = tree_embed_queue + [parent_cnn_embediding]
-                #temp_embed_holder = []
 
-        return (dense_layer)
+
+        return (out_for_test)
 
 
     def init_base_CNN_graph(self):
@@ -283,7 +296,7 @@ class PGPolicyCNN2Tree(Policy):
         key_value_list = {key: value for (key, value) in zip(self._input_tree_cnn_for_test, base_embed_holder)}
         #print(key_value_list)
         test_embed = self._sess_tree_cnn.run(self._gen_embedding,feed_dict = dict(key_value_list))
-        print(np.shape(test_embed))
+
         sys.exit(1)
         temp_embed_holder = []
         while len(tree_embed_queue)>0:
