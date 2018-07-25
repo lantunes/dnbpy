@@ -1,3 +1,4 @@
+from dnbpy import *
 
 
 def print_info(board_size, policy, num_episodes, learning_rate=None, min_learning_rate=None, epsilon=None,
@@ -40,3 +41,86 @@ def to_one_hot_action(board_state, edge_index):
     action_vector = [0]*len(board_state)
     action_vector[edge_index] = 1
     return action_vector
+
+
+def to_state_action_pair_symmetries(board_size, state, action):
+    state_edge_matrix = convert_board_state_to_edge_matrix(board_size, state)
+    action_edge_matrix = convert_board_state_to_edge_matrix(board_size, action)
+    # I symmetry
+    state_i = np.array(state_edge_matrix)
+    action_i = np.array(action_edge_matrix)
+    rows = state_i.shape[0]
+    cols = state_i.shape[1]
+
+    if rows == cols:
+        # S symmetry
+        state_s = np.flip(state_i, 1)
+        action_s = np.flip(action_i, 1)
+
+        # R symmetry
+        state_r = np.rot90(state_i, 1)
+        action_r = np.rot90(action_i, 1)
+
+        # R^2 symmetry
+        state_r2 = np.rot90(state_i, 2)
+        action_r2 = np.rot90(action_i, 2)
+
+        # R^3 symmetry
+        state_r3 = np.rot90(state_i, 3)
+        action_r3 = np.rot90(action_i, 3)
+
+        # SR symmetry
+        state_sr = np.rot90(state_s, 1)
+        action_sr = np.rot90(action_s, 1)
+
+        # SR^2 symmetry
+        state_sr2 = np.rot90(state_s, 2)
+        action_sr2 = np.rot90(action_s, 2)
+
+        # SR^3 symmetry
+        state_sr3 = np.rot90(state_s, 3)
+        action_sr3 = np.rot90(action_s, 3)
+
+        all_possible = [[state_i, action_i], [state_s, action_s], [state_r, action_r],
+                        [state_r2, action_r2], [state_r3, action_r3], [state_sr, action_sr],
+                        [state_sr2, action_sr2], [state_sr3, action_sr3]]
+    else:
+        # S symmetry
+        state_s = np.flip(state_i, 1)
+        action_s = np.flip(action_i, 1)
+
+        # R^2 symmetry
+        state_r2 = np.rot90(state_i, 2)
+        action_r2 = np.rot90(action_i, 2)
+
+        # SR^2 symmetry
+        state_sr2 = np.rot90(state_s, 2)
+        action_sr2 = np.rot90(action_s, 2)
+
+        all_possible = [[state_i, action_i], [state_s, action_s], [state_r2, action_r2], [state_sr2, action_sr2]]
+
+    def contains(list, arr):
+        for item in list:
+            if np.array_equal(item[0], arr[0]):
+                return True
+        return False
+
+    symmetries = []
+    for sym in all_possible:
+        if not contains(symmetries, sym):
+            symmetries.append([convert_edge_matrix_to_board_state(sym[0]), convert_edge_matrix_to_board_state(sym[1])])
+
+    return symmetries
+
+
+def append_transitions(states, actions, outcomes, all_transitions, use_symmetries, board_size):
+    for i, _ in enumerate(actions):
+        state = states[i]
+        action = actions[i]
+        reward = outcomes[i]
+        if use_symmetries:
+            state_action_symmetries = to_state_action_pair_symmetries(board_size, state, action)
+            for symmetry in state_action_symmetries:
+                all_transitions.append([symmetry[0], symmetry[1], reward])
+        else:
+            all_transitions.append([state, action, reward])

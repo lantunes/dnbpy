@@ -9,8 +9,9 @@ from util.evaluator import *
 board_size = (2, 2)
 num_episodes = 2500000
 batch_size = 32
-temperature_schedule = {0: 1.0, 500000: 0.75, 1000000: 0.5, 1500000: 0.4, 2000000: 0.3}
-learning_rate_schedule = {0: 0.005, 500000: 0.001, 1000000: 0.0003, 1500000: 0.00001, 2000000: 0.000001}
+temperature_schedule =   {0: 0.7,  500000: 0.6, 1000000: 0.5,  1500000: 0.4,  2000000: 0.3}
+learning_rate_schedule = {0: 5e-3, 500000: 1e-3, 1000000: 5e-4, 1500000: 5e-5, 2000000: 1e-6}
+use_symmetries = True
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
@@ -21,14 +22,6 @@ reward_fn = DelayedBinaryReward()
 print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward=reward_fn,
            updates='offline', temperature_schedule=temperature_schedule, learning_rate_schedule=learning_rate_schedule,
            architecture=policy.get_architecture(), batch_size=batch_size)
-
-
-def append_transitions(states, actions, outcomes, all_transitions):
-    for i, _ in enumerate(actions):
-        state = states[i]
-        action = actions[i]
-        reward = outcomes[i]
-        all_transitions.append([state, action, reward])
 
 unique_states_visited = set()
 all_transitions = []
@@ -68,10 +61,10 @@ for episode_num in range(1, num_episodes + 1):
     # don't add transitions that have 0 reward as the gradient will be zero anyways
     if p0_reward == 1:
         p0_outcomes = len(p0_actions)*[p0_reward]
-        append_transitions(p0_states, p0_actions, p0_outcomes, all_transitions)
+        append_transitions(p0_states, p0_actions, p0_outcomes, all_transitions, use_symmetries, board_size)
     elif p1_reward == 1:
         p1_outcomes = len(p1_actions)*[p1_reward]
-        append_transitions(p1_states, p1_actions, p1_outcomes, all_transitions)
+        append_transitions(p1_states, p1_actions, p1_outcomes, all_transitions, use_symmetries, board_size)
 
     if episode_num % 100 == 0:
         policy.update_model(all_transitions)
