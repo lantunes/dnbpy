@@ -81,7 +81,7 @@ class PGPolicy3x3CNN(Policy):
             self._action_probs = tf.nn.softmax(tf.matmul(drop_out, self._W_out))
 
             self._cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-                logits=tf.matmul(dense_layer, self._W_out), labels=self._action_taken)
+                logits=tf.matmul(drop_out, self._W_out), labels=self._action_taken)
             self._loss = self._cross_entropy * self._outcome
             if self._batch_size > 1:
                 self._loss = tf.reduce_mean(self._loss)

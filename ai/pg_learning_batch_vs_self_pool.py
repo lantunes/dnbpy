@@ -15,12 +15,13 @@ batch_size = 32
 decay_speed = 1.0
 opponent_pool_max_size = 100
 num_episodes_per_update = 500
+dropout_keep_prob = 0.5
 use_symmetries = True
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-policy = PGPolicy3x3CNN(board_size, batch_size=batch_size, dropout_keep_prob=0.5)
+policy = PGPolicy3x3CNN(board_size, batch_size=batch_size, dropout_keep_prob=dropout_keep_prob)
 opponent = policy
 reward_fn = DelayedBinaryReward()
 opponent_pool = OpponentPool(max_size=opponent_pool_max_size)

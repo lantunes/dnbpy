@@ -16,13 +16,14 @@ decay_speed = 1.0
 opponent_pool_max_size = 100
 num_episodes_per_policy_update = 500
 num_episodes_per_opponent_cache = 500
+dropout_keep_prob = 0.5
 use_symmetries = True
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
 pg_params = read_params('../resources/pg_2x2_cnn2_vs_L0_L1_L2_batch_01-episode-1496000.txt')
-policy = PGPolicyCNN2(board_size, batch_size=batch_size, dropout_keep_prob=1.0, existing_params=pg_params)
+policy = PGPolicyCNN2(board_size, batch_size=batch_size, dropout_keep_prob=dropout_keep_prob, existing_params=pg_params)
 opponent = policy
 reward_fn = DelayedBinaryReward()
 opponent_pool = OpponentPool(max_size=opponent_pool_max_size)
