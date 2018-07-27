@@ -16,7 +16,7 @@ decay_speed = 1.0
 opponent_pool_max_size = 100
 num_episodes_per_policy_update = 500
 num_episodes_per_opponent_cache = 500
-dropout_keep_prob = 0.5
+dropout_keep_prob = 1.0
 use_symmetries = True
 base_path = get_base_path_arg()
 
@@ -30,7 +30,11 @@ opponent_pool = OpponentPool(max_size=opponent_pool_max_size)
 
 print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play pool', reward=reward_fn,
            updates='offline', learning_rate_schedule=learning_rate_schedule, epsilon_schedule=epsilon_schedule,
-           architecture=policy.get_architecture(), batch_size=batch_size, decay_speed=decay_speed)
+           architecture=policy.get_architecture(), batch_size=batch_size, decay_speed=decay_speed,
+           dropout_keep_prob=dropout_keep_prob, use_symmetries=use_symmetries,
+           num_episodes_per_policy_update=num_episodes_per_policy_update,
+           num_episodes_per_opponent_cache=num_episodes_per_opponent_cache,
+           opponent_pool_max_size=opponent_pool_max_size)
 
 unique_states_visited = set()
 all_transitions = []

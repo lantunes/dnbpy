@@ -4,7 +4,9 @@ from dnbpy import *
 def print_info(board_size, policy, num_episodes, learning_rate=None, min_learning_rate=None, epsilon=None,
                min_epsilon=None, temperature=None, min_temperature=None, mode='self-play', reward='delayed',
                updates='online', architecture=None, decay_speed=None, rand_prob=None, batch_size=None,
-               learning_rate_schedule=None, epsilon_schedule=None, temperature_schedule=None):
+               learning_rate_schedule=None, epsilon_schedule=None, temperature_schedule=None,
+               dropout_keep_prob=None, use_symmetries=None, num_episodes_per_policy_update=None,
+               num_episodes_per_opponent_cache=None, opponent_pool_max_size=None):
     print("board size: %sx%s" % board_size)
     print("policy: %s" % policy.__class__.__name__)
     if architecture is not None:
@@ -35,6 +37,16 @@ def print_info(board_size, policy, num_episodes, learning_rate=None, min_learnin
         print("epsilon schedule: %s" % sorted(epsilon_schedule.items()))
     if temperature_schedule is not None:
         print("temperature schedule: %s" % sorted(temperature_schedule.items()))
+    if dropout_keep_prob is not None:
+        print("dropout keep prob.: %s" % dropout_keep_prob)
+    if use_symmetries is not None:
+        print("transitions to symmetries: %s" % use_symmetries)
+    if num_episodes_per_policy_update is not None:
+        print("params updated every %s episodes" % num_episodes_per_policy_update)
+    if num_episodes_per_opponent_cache is not None:
+        print("current policy added to pool every %s episodes" % num_episodes_per_opponent_cache)
+    if opponent_pool_max_size is not None:
+        print("max opponent pool size: %s" % opponent_pool_max_size)
 
 
 def to_one_hot_action(board_state, edge_index):
