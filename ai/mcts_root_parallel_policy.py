@@ -2,19 +2,55 @@ from .mcts_game import MCTSGame
 from dnbpy import *
 from math import *
 import math
+import concurrent.futures
 
 
-class MCTSPolicy2:
-    def __init__(self, board_size, num_playouts, c=sqrt(2), default_policy=None):
+class MCTSRootParallelPolicy:
+    """
+    Parallelizes MCTS using Root Parallelization.
+    """
+    def __init__(self, board_size, num_playouts, num_workers, c=sqrt(2), default_policy=None):
         self._board_size = board_size
         self._num_playouts = num_playouts
         self._c = c
         self._default_policy = default_policy
+        self._num_workers = num_workers
 
     def set_num_playouts(self, num_playouts):
         self._num_playouts = num_playouts
 
     def select_edge(self, board_state, root_player_score):
+        root_nodes = []
+
+        with concurrent.futures.ProcessPoolExecutor(max_workers=self._num_workers) as executor:
+            for r in executor.map(self._playout, [board_state]*self._num_workers, [root_player_score]*self._num_workers):
+                root_nodes.append(r)
+
+        # return the move that was most visited
+        merged_root_node = self._merge_root_nodes(root_nodes, board_state)
+        most_visited_node = sorted(merged_root_node.children, key = lambda c: c.visits)[-1]
+        return self._get_selected_index(most_visited_node.state, board_state)
+
+    def _merge_root_nodes(self, root_nodes, board_state):
+        merged_root_node = _Node(board_state, self._c)
+        merged_children_map = {}
+        for root_node in root_nodes:
+            merged_root_node.visits += root_node.visits
+            merged_root_node.wins += root_node.wins
+            for child_node in root_node.children:
+                child_state = as_string(child_node.state)
+                if child_state not in merged_children_map:
+                    merged_child_node = merged_root_node.add_child(child_node.state, self._c)
+                    merged_child_node.visits += child_node.visits
+                    merged_child_node.wins += child_node.wins
+                    merged_children_map[child_state] = merged_child_node
+                else:
+                    merged_child_node = merged_children_map[child_state]
+                    merged_child_node.visits += child_node.visits
+                    merged_child_node.wins += child_node.wins
+        return merged_root_node
+
+    def _playout(self, board_state, root_player_score):
         root_node = _Node(board_state, self._c)
 
         # Perform playouts
@@ -71,9 +107,7 @@ class MCTSPolicy2:
                     node.wins += (1 if opponent_score > root_score else 0)
                 node = node.parent
 
-        # return the move that was most visited
-        most_visited_node = sorted(root_node.children, key = lambda c: c.visits)[-1]
-        return self._get_selected_index(most_visited_node.state, board_state)
+        return root_node
 
     def _get_selected_index(self, child_state, parent_state):
         diff = [x1 - x2 for (x1, x2) in zip(child_state, parent_state)]

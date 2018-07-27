@@ -13,6 +13,7 @@ min_learning_rate = 0.000001
 temperature = 1.0
 min_temperature = 1.0
 decay_speed = 1.0
+use_symmetries = True
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
@@ -23,14 +24,6 @@ reward_fn = DelayedBinaryReward()
 print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward=reward_fn,
            updates='offline', learning_rate=learning_rate, min_learning_rate=min_learning_rate, temperature=temperature,
            min_temperature=min_temperature, architecture=policy.get_architecture(), decay_speed=decay_speed)
-
-
-def append_transitions(states, actions, outcomes, all_transitions):
-    for i, _ in enumerate(actions):
-        state = states[i]
-        action = actions[i]
-        reward = outcomes[i]
-        all_transitions.append([state, action, reward])
 
 unique_states_visited = set()
 for episode_num in range(1, num_episodes + 1):
@@ -69,8 +62,8 @@ for episode_num in range(1, num_episodes + 1):
     p1_outcomes = len(p1_actions)*[p1_reward]
 
     all_transitions = []
-    append_transitions(p0_states, p0_actions, p0_outcomes, all_transitions)
-    append_transitions(p1_states, p1_actions, p1_outcomes, all_transitions)
+    append_transitions(p0_states, p0_actions, p0_outcomes, all_transitions, use_symmetries, board_size)
+    append_transitions(p1_states, p1_actions, p1_outcomes, all_transitions, use_symmetries, board_size)
 
     policy.update_model(all_transitions)
 

@@ -1,5 +1,5 @@
 floyd run --env tensorflow --cpu2 'bash treelib_setup.sh && python -m ai.td1_gradient_learning_delayed_vs_offline_cnn_v2 -b /output/'
 
-floyd run --env tensorflow --cpu 'bash treelib_setup.sh && python -m ai.tournament'
+floyd run --env tensorflow --cpu2 'bash treelib_setup.sh && python -m ai.tournament'
 
 floyd run --env tensorflow --cpu2 'bash treelib_setup.sh && python -m ai.pg_learning -b /output/'

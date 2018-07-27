@@ -2,20 +2,22 @@ from ai import *
 from dnbpy import *
 import tensorflow as tf
 import numpy as np
+from ai import MCTSPolicy2
 from util.initializer_util import *
 
 
-class PGPolicyCNN2(Policy):
+class PGPolicyMCTSCNN2(Policy):
     """
     Adds a second convolutional layer.
     """
-    def __init__(self, board_size, batch_size=1, existing_params=None, dropout_keep_prob=1.0):
+    def __init__(self, board_size, mcts_policy, batch_size=1, existing_params=None, dropout_keep_prob=1.0):
         self._sess = tf.Session()
         self._board_size = board_size
         self._batch_size = batch_size
         self._epsilon = 0.0
         self._temperature = 0.0
         self._dropout_keep_prob = dropout_keep_prob
+        self._mcts_policy = mcts_policy
 
         edge_matrix = init_edge_matrix(board_size)
         self._n_input_rows = edge_matrix.shape[0]
@@ -84,7 +86,7 @@ class PGPolicyCNN2(Policy):
             self._action_probs = tf.nn.softmax(tf.matmul(drop_out, self._W_out))
 
             self._cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-                logits=tf.matmul(drop_out, self._W_out), labels=self._action_taken)
+                logits=tf.matmul(dense_layer, self._W_out), labels=self._action_taken)
             self._loss = self._cross_entropy * self._outcome
             if self._batch_size > 1:
                 self._loss = tf.reduce_mean(self._loss)
@@ -103,7 +105,7 @@ class PGPolicyCNN2(Policy):
     def get_architecture(self):
         return "5x5-conv(3x3, relu, 12)-conv(3x3, relu, 24)-tanh(300)-softmax(1)"
 
-    def select_edge(self, board_state):
+    def select_edge(self, board_state, player_score=None):
         edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
         action_probs = self._sess.run([self._action_probs], feed_dict={
             self._input: [edge_matrix],
@@ -130,7 +132,7 @@ class PGPolicyCNN2(Policy):
         else:
             if random.random() < self._epsilon:
                 # do epsilon greedy action
-                return random.choice(zero_indices)
+                return self._mcts_policy.select_edge(board_state, player_score)
             else:
                 # return the legal action with the highest prob
                 highest_prob_index = random.choice(zero_indices)
@@ -208,7 +210,7 @@ class PGPolicyCNN2(Policy):
         return params_map
 
     def copy(self):
-        policy_copy = type(self)(self._board_size, self._batch_size, self.get_params())
+        policy_copy = type(self)(self._board_size, self._mcts_policy, self._batch_size, self.get_params())
         policy_copy.set_temperature(self.get_temperature())
         policy_copy.set_epsilon(self.get_epsilon())
         policy_copy.set_boltzmann_action(self.is_boltzmann_action())

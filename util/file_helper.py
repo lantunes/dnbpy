@@ -45,7 +45,7 @@ def get_base_path_arg():
     args = parser.parse_args()
     base_path = vars(args)['basepath']
     if base_path is None:
-        raise Exception("specify the path where files will be written using the -b command line arg")
+        return None
     if not os.access(base_path, os.W_OK):
         raise Exception("cannot write to :'%s'; "
                         "specify the path where files will be written using the -b command line arg" % base_path)
@@ -70,7 +70,8 @@ class WeightWriter:
 
     @staticmethod
     def print_episode(base_path, episode_num, printer):
-        base_path += 'weights/'
-        weight_writer = WeightWriter(base_path=base_path, filename='weights-' + str(episode_num) + '.txt')
-        weight_writer.print(printer)
-        weight_writer.close()
+        if base_path is not None:
+            base_path += 'weights/'
+            weight_writer = WeightWriter(base_path=base_path, filename='weights-' + str(episode_num) + '.txt')
+            weight_writer.print(printer)
+            weight_writer.close()

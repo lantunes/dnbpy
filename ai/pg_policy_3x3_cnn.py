@@ -5,10 +5,7 @@ import numpy as np
 from util.initializer_util import *
 
 
-class PGPolicyCNN2(Policy):
-    """
-    Adds a second convolutional layer.
-    """
+class PGPolicy3x3CNN(Policy):
     def __init__(self, board_size, batch_size=1, existing_params=None, dropout_keep_prob=1.0):
         self._sess = tf.Session()
         self._board_size = board_size
@@ -20,7 +17,7 @@ class PGPolicyCNN2(Policy):
         edge_matrix = init_edge_matrix(board_size)
         self._n_input_rows = edge_matrix.shape[0]
         self._n_input_cols = edge_matrix.shape[1]
-        self._n_hidden = 300
+        self._n_hidden = 500
         self._n_output = len(init_board_state(board_size))
 
         # TF graph creation
@@ -40,7 +37,7 @@ class PGPolicyCNN2(Policy):
             conv_kernel2_initializer = existing_param_initializer(existing_params, "conv2d_1/kernel:0", tf.random_normal_initializer(0.0, 0.1))
             conv_bias2_initializer = existing_param_initializer(existing_params, "conv2d_1/bias:0", tf.zeros_initializer())
 
-            self._W_in = tf.get_variable(shape=[3 * 3 * 24, self._n_hidden], initializer=W_in_initializer, name="W_in")
+            self._W_in = tf.get_variable(shape=[5 * 5 * 24, self._n_hidden], initializer=W_in_initializer, name="W_in")
             self._b_in = tf.get_variable(shape=[self._n_hidden], initializer=b_in_initializer, name="b_in")
             self._W_out = tf.get_variable(shape=[self._n_hidden, self._n_output], initializer=W_out_initializer, name="W_out")
 
@@ -49,8 +46,8 @@ class PGPolicyCNN2(Policy):
             # Convolutional Layer 1
             # Computes 12 features using a 3x3 filter with ReLU activation.
             # Padding is added to preserve width and height.
-            # Input Tensor Shape (for the 2x2 board): [None, 5, 5, 1] (batch size, width, height, channels)
-            # Output Tensor Shape: [None, 5, 5, 12]
+            # Input Tensor Shape (for the 3x3 board): [None, 7, 7, 1] (batch size, width, height, channels)
+            # Output Tensor Shape: [None, 7, 7, 12]
             self._conv = tf.layers.conv2d(
                 inputs=self._input_reshaped,
                 filters=12,
@@ -64,8 +61,8 @@ class PGPolicyCNN2(Policy):
             # Convolutional Layer 2
             # Computes 24 features using a 3x3 filter with ReLU activation.
             # No padding is added.
-            # Input Tensor Shape: [None, 5, 5, 12]
-            # Output Tensor Shape: [None, 3, 3, 24]
+            # Input Tensor Shape: [None, 7, 7, 12]
+            # Output Tensor Shape: [None, 5, 5, 24]
             self._conv2 = tf.layers.conv2d(
                 inputs=self._conv,
                 filters=24,
@@ -75,7 +72,7 @@ class PGPolicyCNN2(Policy):
                 bias_initializer=conv_bias2_initializer,
                 activation=tf.nn.relu)
 
-            self._conv_flat = tf.reshape(self._conv2, [tf.shape(self._input)[0], 3 * 3 * 24])
+            self._conv_flat = tf.reshape(self._conv2, [tf.shape(self._input)[0], 5 * 5 * 24])
 
             dense_layer = tf.nn.tanh(tf.matmul(self._conv_flat, self._W_in) + self._b_in)
 
@@ -101,7 +98,7 @@ class PGPolicyCNN2(Policy):
             self._sess.run(tf.global_variables_initializer())
 
     def get_architecture(self):
-        return "5x5-conv(3x3, relu, 12)-conv(3x3, relu, 24)-tanh(300)-softmax(1)"
+        return "7x7-conv(3x3, relu, 12)-conv(3x3, relu, 24)-tanh(500)-softmax(1)"
 
     def select_edge(self, board_state):
         edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
@@ -109,7 +106,7 @@ class PGPolicyCNN2(Policy):
             self._input: [edge_matrix],
             self._keep_prob: 1.0
         })
-        # convert to 12D ndarray
+        # convert to array
         action_probs = action_probs[0][0]
 
         zero_indices = []  # indices of legal actions
