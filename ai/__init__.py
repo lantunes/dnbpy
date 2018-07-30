@@ -13,7 +13,7 @@ from .td1_gradient_policy_cnn_v2d import *
 from .td1_gradient_3x3_policy_cnn_v2 import *
 from .level1_heuristic_policy import *
 from .level2_heuristic_policy import *
-from .causal_entropic_policy import *
+#from .causal_entropic_policy import *
 from .pg_policy_cnn import *
 from .mcts_game import *
 from .mcts_policy import *

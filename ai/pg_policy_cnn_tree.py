@@ -100,13 +100,11 @@ class PGPolicyCNN2Tree(Policy):
 
             self._gen_embedding = self.gen_embbedding(self._input_tree_cnn_for_test)
             self._action_probs_tree_cnn = tf.nn.softmax(tf.matmul(self._gen_embedding, self._W_out_tree_cnn))
-            self._cross_entropy_tree_cnn = tf.nn.softmax_cross_entropy_with_logits(
-               logits=tf.matmul(self._gen_embedding, self._W_out), labels=self._action_taken)
+            #self._cross_entropy_tree_cnn = tf.nn.softmax_cross_entropy_with_logits(
+             #  logits=tf.matmul(self._gen_embedding, self._W_out), labels=self._action_taken)
 
             self._sess_tree_cnn = tf.Session(graph=self.graph_tree_cnn)
             self._sess_tree_cnn.run(tf.global_variables_initializer())
-
-
 
 
     def gen_embbedding(self,x):
@@ -257,6 +255,7 @@ class PGPolicyCNN2Tree(Policy):
         :param board_state: the current string state of the board
         :return:
         """
+        writer = tf.summary.FileWriter("/Users/u6042446/Desktop/LuisRL/dnbpy/ai/logs/", self.graph_tree_cnn)
 
         #Convert board_state to the edge-matrix
         edge_matrix = convert_board_state_to_edge_matrix(self._board_size_tree_cnn, board_state)
@@ -307,6 +306,7 @@ class PGPolicyCNN2Tree(Policy):
             if board_state[i] == 0:
                 zero_indices.append(i)
 
+        writer.close()
         if self._boltzmann_action:
             # return the action sampled according to temperature and the given probs
             # re-normalize the probs to disallow illegal actions

@@ -39,17 +39,25 @@ def silent_remove(filename):
             raise
 
 
-def get_base_path_arg():
+def get_args():
     parser = ArgumentParser()
     parser.add_argument("-b", "--basepath", help="the base path where files will be written")
+    parser.add_argument("-m", "--minEpsilon", help="minimum value of epsilon for exploration")
+    parser.add_argument("-M", "--maxEpsilon", help="maximum value of epsilon for exploration")
+    parser.add_argument("-N", "--nameExperiment", help="name of the experiment")
+
     args = parser.parse_args()
     base_path = vars(args)['basepath']
-    if base_path is None:
-        return None
+    min_eps = vars(args)['minEpsilon']
+    max_eps = vars(args)['maxEpsilon']
+    exp_name = vars(args)['nameExperiment']
+
+
     if not os.access(base_path, os.W_OK):
         raise Exception("cannot write to :'%s'; "
                         "specify the path where files will be written using the -b command line arg" % base_path)
-    return base_path
+    return base_path,min_eps,max_eps,exp_name
+
 
 
 class WeightWriter:

@@ -3,7 +3,7 @@ from dnbpy import *
 import tensorflow as tf
 import numpy as np
 from util.initializer_util import *
-
+import os
 
 class PGPolicy3x3CNN(Policy):
     def __init__(self, board_size, batch_size=1, existing_params=None, dropout_keep_prob=1.0):
@@ -21,8 +21,8 @@ class PGPolicy3x3CNN(Policy):
         self._n_output = len(init_board_state(board_size))
 
         # TF graph creation
-        g = tf.Graph()
-        with g.as_default():
+        self.g = tf.Graph()
+        with self.g.as_default():
             self._input = tf.placeholder("float", [None, self._n_input_rows, self._n_input_cols], name="input")
             self._action_taken = tf.placeholder("float", [None, self._n_output], name="action_taken")
             self._outcome = tf.placeholder(tf.float32, (None, 1), name="outcome")
@@ -91,11 +91,14 @@ class PGPolicy3x3CNN(Policy):
             self._conv2d_bias = [v for v in tf.global_variables() if v.name == 'conv2d/bias:0'][0]
             self._conv2d_kernel2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/kernel:0'][0]
             self._conv2d_bias2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/bias:0'][0]
+            self.saver = tf.train.Saver()
 
         # TF session creation and initialization
-        self._sess = tf.Session(graph=g)
-        with g.as_default():
+        self._sess = tf.Session(graph=self.g)
+        with self.g.as_default():
             self._sess.run(tf.global_variables_initializer())
+
+
 
     def get_architecture(self):
         return "7x7-conv(3x3, relu, 12)-conv(3x3, relu, 24)-tanh(500)-softmax(1)"
@@ -166,14 +169,18 @@ class PGPolicy3x3CNN(Policy):
     def set_learning_rate(self, lr):
         self._learning_rate = lr
 
-    def update_model(self, transitions):
+    def update_model(self, transitions,mean_return=None,std_return=None):
         np.random.shuffle(transitions)
         batches = list(self._minibatches(transitions, batch_size=self._batch_size))
         for b in range(len(batches)):
             batch = batches[b]
             states = [convert_board_state_to_edge_matrix(self._board_size, row[0]) for row in batch]
             actions = [row[1] for row in batch]
-            outcomes = [[row[2]] for row in batch]
+            if not mean_return:
+                outcomes = [[row[2]] for row in batch]
+            else:
+                outcomes = [([row[2]]-mean_return)/std_return for row in batch]
+
             self._sess.run([self._train_op], {
                 self._input:        states,
                 self._action_taken: actions,
@@ -185,6 +192,24 @@ class PGPolicy3x3CNN(Policy):
     def _minibatches(self, samples, batch_size):
         for i in range(0, len(samples), batch_size):
             yield samples[i:i + batch_size]
+
+    def store_model(self,path,model_name):
+        """
+        :Stores the whole model in the given path
+        :param path:
+        :param model_name:
+        :return:
+        """
+        save_path = self.saver.save(self._sess,os.path.join(path, model_name))
+
+    def restore_model(self, path):
+        """
+        :This restores the base CNN model
+        :param path: The path to the base-CNN model
+        :return:
+        """
+        with self.g.as_default():
+            self.saver.restore(self._sess, path)
 
     def get_params(self):
         params_map = {}
