@@ -10,7 +10,6 @@ class PGPolicyCNN2(Policy):
     Adds a second convolutional layer.
     """
     def __init__(self, board_size, batch_size=1, existing_params=None, dropout_keep_prob=1.0):
-        self._sess = tf.Session()
         self._board_size = board_size
         self._batch_size = batch_size
         self._epsilon = 0.0
@@ -81,6 +80,7 @@ class PGPolicyCNN2(Policy):
 
             drop_out = tf.nn.dropout(dense_layer, self._keep_prob)
 
+            # TODO: tf.matmul(drop_out, self._W_out) should be divided by a temperature (which is 1.0 by default)
             self._action_probs = tf.nn.softmax(tf.matmul(drop_out, self._W_out))
 
             self._cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
@@ -96,7 +96,7 @@ class PGPolicyCNN2(Policy):
             self._conv2d_bias2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/bias:0'][0]
 
         # TF session creation and initialization
-        self._sess = tf.Session(graph=g)
+        self._sess = tf.Session(graph=g, config=tf.ConfigProto(use_per_session_threads=True))
         with g.as_default():
             self._sess.run(tf.global_variables_initializer())
 
@@ -144,6 +144,32 @@ class PGPolicyCNN2(Policy):
     def _softmax(self, x):
         e_x = np.exp(x - np.max(x))
         return e_x / e_x.sum()
+
+    def get_action_probs(self, board_state):
+        edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
+        action_probs = self._sess.run([self._action_probs], feed_dict={
+            self._input: [edge_matrix],
+            self._keep_prob: 1.0
+        })
+        # convert to 12D ndarray
+        action_probs = action_probs[0][0]
+
+        zero_indices = []  # indices of legal actions
+        for i in range(len(board_state)):
+            if board_state[i] == 0:
+                zero_indices.append(i)
+
+        legal_raw_probs = []
+        for z in zero_indices:
+            legal_raw_probs.append(action_probs[z])
+        legal_normalized_probs = self._softmax(legal_raw_probs)
+
+        action_prob_map = {}
+        for i in range(len(zero_indices)):
+            action_state = [x for x in board_state]
+            action_state[zero_indices[i]] = 1
+            action_prob_map[as_string(action_state)] = legal_normalized_probs[i]
+        return action_prob_map
 
     def get_temperature(self):
         return self._temperature

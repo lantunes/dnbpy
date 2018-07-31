@@ -6,9 +6,16 @@ def print_info(board_size, policy, num_episodes, learning_rate=None, min_learnin
                updates='online', architecture=None, decay_speed=None, rand_prob=None, batch_size=None,
                learning_rate_schedule=None, epsilon_schedule=None, temperature_schedule=None,
                dropout_keep_prob=None, use_symmetries=None, num_episodes_per_policy_update=None,
-               num_episodes_per_opponent_cache=None, opponent_pool_max_size=None):
+               num_episodes_per_opponent_cache=None, opponent_pool_max_size=None, episodes_per_thread=None,
+               mcts=None, mcts_simulations=None, mcts_c=None):
     print("board size: %sx%s" % board_size)
     print("policy: %s" % policy.__class__.__name__)
+    if mcts is not None:
+        print("MCTS policy: %s" % mcts.__class__.__name__)
+    if mcts_simulations is not None:
+        print("MCTS simulations: %s" % mcts_simulations)
+    if mcts_c is not None:
+        print("MCTS c: %s" % mcts_c)
     if architecture is not None:
         print("architecture: %s" % architecture)
     print("mode: %s" % mode)
@@ -47,6 +54,8 @@ def print_info(board_size, policy, num_episodes, learning_rate=None, min_learnin
         print("current policy added to pool every %s episodes" % num_episodes_per_opponent_cache)
     if opponent_pool_max_size is not None:
         print("max opponent pool size: %s" % opponent_pool_max_size)
+    if episodes_per_thread is not None:
+        print("# episodes per thread: %s" % episodes_per_thread)
 
 
 def to_one_hot_action(board_state, edge_index):
