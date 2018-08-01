@@ -22,3 +22,5 @@ from .mcts_root_parallel_policy import *
 from .pg_policy_cnn2 import *
 from .pg_policy_mcts_cnn2 import *
 from .pg_policy_3x3_cnn import *
+from .mcts_policy_net_policy import *
+from .mcts_policy_net_policy_cpuct import *
