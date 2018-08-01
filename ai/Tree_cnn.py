@@ -20,21 +20,28 @@ class Tree_node:
         self.sub_board_bottom_left
         self.sub_board_bottom_right
 
-def gen_sub_boards(save_all_ranges):
+def gen_sub_boards(save_all_ranges,jump_step_size):
     index = 0
     while True:
         x_range = save_all_ranges[index][0]
         y_range = save_all_ranges[index][1]
         left_x = x_range[0];right_x = x_range[1]
         up_y = y_range[0]; down_y = y_range[1]
-        if abs(right_x - left_x) == 2 and abs(up_y - down_y) == 2: break
+        if abs(right_x - left_x)-jump_step_size == 1 and abs(up_y - down_y)-jump_step_size == 1: break
         save_all_ranges = save_all_ranges[1:]
 
-        top_left = [[left_x,right_x-1],[up_y,down_y-1]]
-        top_right = [[left_x+1,right_x],[up_y,down_y-1]]
-        bot_left = [[left_x,right_x-1],[up_y+1,down_y]]
-        bot_right = [[left_x+1,right_x],[up_y+1,down_y]]
-        save_all_ranges = save_all_ranges + [top_left] + [top_right] + [bot_left] + [bot_right]
+        for y_step in np.arange(0,jump_step_size+1,1):
+            for x_step in np.arange(0,jump_step_size+1,1):
+                sub_board_indeces = [[left_x+x_step,right_x+x_step-jump_step_size],[up_y+y_step,down_y+y_step-jump_step_size]]
+                save_all_ranges+= [sub_board_indeces]
+
+        #print(save_all_ranges)
+        #sys.exit(1)
+        #top_left = [[left_x,right_x-1],[up_y,down_y-1]]
+        #top_right = [[left_x+1,right_x],[up_y,down_y-1]]
+        #bot_left = [[left_x,right_x-1],[up_y+1,down_y]]
+        #bot_right = [[left_x+1,right_x],[up_y+1,down_y]]
+        #save_all_ranges = save_all_ranges + [top_left] + [top_right] + [bot_left] + [bot_right]
     return (save_all_ranges)
 
 def get_sub_edge_matrix(main_edge_matrix,sub_slice):
@@ -50,11 +57,11 @@ def get_sub_edge_matrix(main_edge_matrix,sub_slice):
 
 
 if __name__=="__main__":
-    board_size = (4,4)
-    edge_matrix = init_edge_matrix((4,4))
+    board_size = (5,5)
+    edge_matrix = init_edge_matrix((5,5))
     save_all_ranges = [[[0,5],[0,5]]]
-    save_all_ranges = gen_sub_boards(save_all_ranges)
-
+    save_all_ranges = gen_sub_boards(save_all_ranges,2)
+    sys.exit(1)
     players = [0, 1]
     game = Game(board_size, players)
     current_player = game.get_current_player()
