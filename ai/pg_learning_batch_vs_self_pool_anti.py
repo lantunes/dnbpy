@@ -7,30 +7,29 @@ from util.rate_util import *
 from util.evaluator import *
 from util.opponent_pool_util import *
 
-board_size = (2, 2)
+board_size = (3, 3)
 num_episodes = 1000000
 learning_rate_schedule = {0: 0.005}
-max_epsilon = 1.0
-min_epsilon = 0.1
+epsilon_schedule = {0: 0.9, 10000: 0.85, 20000: 0.8, 30000: 0.75, 40000: 0.65, 50000: 0.55, 60000: 0.45, 70000: 0.35}
 batch_size = 32
 decay_speed = 1.0
 opponent_pool_max_size = 100
 num_episodes_per_update = 500
 dropout_keep_prob = 1.0
-use_symmetries = False
+use_symmetries = True
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-policy = PGPolicyCNN2(board_size, batch_size=batch_size, dropout_keep_prob=dropout_keep_prob)
-anti_policy = PGPolicyCNN2(board_size, batch_size=batch_size, dropout_keep_prob=dropout_keep_prob)
+policy = PGPolicy3x3CNN(board_size, batch_size=batch_size, dropout_keep_prob=dropout_keep_prob)
+anti_policy = PGPolicy3x3CNN(board_size, batch_size=batch_size, dropout_keep_prob=dropout_keep_prob)
 opponent = policy
 anti_opponent = anti_policy
 reward_fn = DelayedBinaryReward()
 opponent_pool = OpponentPool(max_size=opponent_pool_max_size)
 
 print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play pool', reward=reward_fn,
-           updates='offline', learning_rate_schedule=learning_rate_schedule, epsilon=max_epsilon, min_epsilon=min_epsilon,
+           updates='offline', learning_rate_schedule=learning_rate_schedule, epsilon_schedule=epsilon_schedule,
            architecture=policy.get_architecture(), batch_size=batch_size, decay_speed=decay_speed,
            dropout_keep_prob=dropout_keep_prob, use_symmetries=use_symmetries,
            num_episodes_per_policy_update=num_episodes_per_update,
@@ -67,7 +66,7 @@ unique_states_visited = set()
 all_transitions = []
 all_anti_transitions = []
 for episode_num in range(1, num_episodes + 1):
-    epsilon = gen_rate_exponential(episode_num, max_epsilon, min_epsilon, num_episodes, decay_speed)
+    epsilon = gen_rate_step(episode_num, epsilon_schedule)
     lr = gen_rate_step(episode_num, learning_rate_schedule)
     policy.set_boltzmann_action(False)
     policy.set_epsilon(0.0)
