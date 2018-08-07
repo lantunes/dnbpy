@@ -145,7 +145,7 @@ class PGPolicyCNN2(Policy):
         e_x = np.exp(x - np.max(x))
         return e_x / e_x.sum()
 
-    def get_action_probs(self, board_state):
+    def get_action_probs(self, board_state, normalize_with_softmax=False):
         edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
         action_probs = self._sess.run([self._action_probs], feed_dict={
             self._input: [edge_matrix],
@@ -162,7 +162,10 @@ class PGPolicyCNN2(Policy):
         legal_raw_probs = []
         for z in zero_indices:
             legal_raw_probs.append(action_probs[z])
-        legal_normalized_probs = self._softmax(legal_raw_probs)
+        if normalize_with_softmax:
+            legal_normalized_probs = self._softmax(legal_raw_probs)
+        else:
+            legal_normalized_probs = self._normalize(legal_raw_probs)
 
         action_prob_map = {}
         for i in range(len(zero_indices)):
@@ -170,6 +173,10 @@ class PGPolicyCNN2(Policy):
             action_state[zero_indices[i]] = 1
             action_prob_map[as_string(action_state)] = legal_normalized_probs[i]
         return action_prob_map
+
+    def _normalize(self, probs):
+        prob_factor = 1 / sum(probs)
+        return np.array([prob_factor * p for p in probs])
 
     def get_temperature(self):
         return self._temperature

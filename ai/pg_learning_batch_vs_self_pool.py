@@ -10,7 +10,7 @@ from util.opponent_pool_util import *
 board_size = (3, 3)
 num_episodes = 1000000
 learning_rate_schedule = {0: 0.005}
-epsilon_schedule = {0: 0.90, 500000: 0.85}
+epsilon_schedule = {0: 0.9, 10000: 0.85, 20000: 0.8, 30000: 0.75, 40000: 0.65, 50000: 0.55, 60000: 0.45, 70000: 0.35}
 batch_size = 32
 decay_speed = 1.0
 opponent_pool_max_size = 100

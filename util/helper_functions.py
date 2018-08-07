@@ -7,7 +7,7 @@ def print_info(board_size, policy, num_episodes, learning_rate=None, min_learnin
                learning_rate_schedule=None, epsilon_schedule=None, temperature_schedule=None,
                dropout_keep_prob=None, use_symmetries=None, num_episodes_per_policy_update=None,
                num_episodes_per_opponent_cache=None, opponent_pool_max_size=None, episodes_per_thread=None,
-               mcts=None, mcts_simulations=None, mcts_c=None):
+               mcts=None, mcts_simulations=None, mcts_c=None, normalize_action_probs_with_softmax=None):
     print("board size: %sx%s" % board_size)
     print("policy: %s" % policy.__class__.__name__)
     if mcts is not None:
@@ -28,9 +28,11 @@ def print_info(board_size, policy, num_episodes, learning_rate=None, min_learnin
         print("min. learning rate: %s" % min_learning_rate)
     if epsilon is not None:
         print("epsilon: %s" % epsilon)
+    if min_epsilon is not None:
         print("min. epsilon: %s" % min_epsilon)
     if temperature is not None:
         print("temperature: %s" % temperature)
+    if min_temperature is not None:
         print("min. temperature: %s" % min_temperature)
     if rand_prob is not None:
         print("random player prob.: %s" % rand_prob)
@@ -56,6 +58,8 @@ def print_info(board_size, policy, num_episodes, learning_rate=None, min_learnin
         print("max opponent pool size: %s" % opponent_pool_max_size)
     if episodes_per_thread is not None:
         print("# episodes per thread: %s" % episodes_per_thread)
+    if normalize_action_probs_with_softmax is not None:
+        print("normalize action probs with softmax: %s" % normalize_action_probs_with_softmax)
 
 
 def to_one_hot_action(board_state, edge_index):

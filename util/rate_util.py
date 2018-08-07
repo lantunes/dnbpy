@@ -1,6 +1,6 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import pylab
+# import matplotlib.pyplot as plt
+# import pylab
 
 
 def gen_rate_exponential(n, max, min, n_max, speed=1):
@@ -32,19 +32,19 @@ def gen_rate_step(n, schedule):
             return schedule[0]
 
 
-def plot_rate(max, min, num_episodes, speed, fn):
-    episodes = []
-    vals = []
-    for episode_num in range(1, num_episodes + 1):
-        val = fn(episode_num, max, min, num_episodes, speed)
-        vals.append(val)
-        episodes.append(episode_num)
-        print(val)
-    pylab.plot(episodes, vals, 'k-', linewidth=0.5, marker='.', markersize=2)
-    plt.xlabel("iteration", size=15)
-    plt.ylabel("rate", size=15)
-    plt.grid(True, linewidth=0.2)
-    plt.show()
+# def plot_rate(max, min, num_episodes, speed, fn):
+#     episodes = []
+#     vals = []
+#     for episode_num in range(1, num_episodes + 1):
+#         val = fn(episode_num, max, min, num_episodes, speed)
+#         vals.append(val)
+#         episodes.append(episode_num)
+#         print(val)
+#     pylab.plot(episodes, vals, 'k-', linewidth=0.5, marker='.', markersize=2)
+#     plt.xlabel("iteration", size=15)
+#     plt.ylabel("rate", size=15)
+#     plt.grid(True, linewidth=0.2)
+#     plt.show()
 
 
 # plot_rate(1, 0.01, 100000, 1.17, gen_rate_exponential)
