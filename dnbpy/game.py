@@ -24,7 +24,13 @@ class Game:
         self._board_state = init_board_state(board_size)
         self._boxes = self._init_boxes()
         self._players_to_boxes = {}
+        self._box_matrix = {}
+
+
         self._edge_matrix = init_edge_matrix(board_size)
+
+        for player in players:self._box_matrix[player] = init_box_matrix(board_size)
+
         for player in players:
             self._players_to_boxes[player] = []
 
@@ -35,7 +41,7 @@ class Game:
         r_index = 0
         for r in range(rows):
             for c in range(cols):
-                boxes.append(Box(r_index, r_index + cols, r_index + cols + 1, 2*cols + 1 + r_index))
+                boxes.append(Box(r_index, r_index + cols, r_index + cols + 1, 2*cols + 1 + r_index,r,c))
                 r_index += 1
             r_index += cols + 1
         return boxes
@@ -45,6 +51,8 @@ class Game:
 
     def get_players(self):
         return [player for player in self._players]
+
+    def get_board_box_matrix(self):return(self._box_matrix)
 
     def get_board_state(self):
         """
@@ -81,7 +89,14 @@ class Game:
         self._edge_matrix[coordinates] += 1
         boxes_made = 0
         for box in self._boxes:
+            #if box.is_complete(self._board_state):
+             #   row_index,col_index = box.get_indices()
+              #  self._box_matrix[player][2*row_index+1,2*col_index+1] = 1 #Map of completed boxes for each player
+
             if box.contains(edge_index) and box.is_complete(self._board_state) and box not in self._players_to_boxes[player]:
+                row_index, col_index = box.get_indices()
+                self._box_matrix[player][
+                    2 * row_index + 1, 2 * col_index + 1] = 1  # Map of completed boxes for each player
                 self._players_to_boxes[player].append(box)
                 boxes_made += 1
         if boxes_made == 0:
@@ -118,13 +133,29 @@ class Game:
     def get_edge_matrix(self):
         return np.array(self._edge_matrix)
 
+    def get_tensor_representation(self):
+        out_tensor = []
+        out_tensor.append(self.get_edge_matrix())
+        boxes = self.get_board_box_matrix()
+        for player in self._players:
+            out_tensor.append(boxes[player])
+        if self._current_player==0:
+            out_tensor.append(np.zeros([2*self._board_size[0]+1,2*self._board_size[1]+1]))
+        else:
+            out_tensor.append(np.ones([2 * self._board_size[0] + 1, 2 * self._board_size[1] + 1]))
+
+        return (np.array(out_tensor))
+
+
     def __str__(self):
         return ToString().apply(self)
 
 
 class Box:
-    def __init__(self, edge1, edge2, edge3, edge4):
+    def __init__(self, edge1, edge2, edge3, edge4,row_index,column_index):
         self._edges = [edge1, edge2, edge3, edge4]
+        self._row_index = row_index
+        self._col_index = column_index
 
     def contains(self, edge):
         return edge in self._edges
@@ -132,9 +163,13 @@ class Box:
     def get_edges(self):
         return [edge for edge in self._edges]
 
+    def get_indices(self):
+        return(self._row_index,self._col_index)
+
     def is_complete(self, board_state):
         return board_state[self._edges[0]] == 1 and board_state[self._edges[1]] == 1 and \
                board_state[self._edges[2]] == 1 and board_state[self._edges[3]] == 1
+
 
     def __str__(self):
         return '-'.join([str(x) for x in self._edges])

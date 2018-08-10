@@ -1,6 +1,10 @@
 import numpy as np
 
 
+
+#def convert_vector_index_to_box_coordinates(board_size, vector_index):
+
+
 def convert_vector_index_to_coordinates(board_size, vector_index):
     """
     Converts vector index to edge matrix coordinates
@@ -41,9 +45,14 @@ def init_board_state(board_size):
 def init_edge_matrix(board_size):
     rows = board_size[0]
     cols = board_size[1]
-    even = [1 if i % 2 == 0 else 0 for i in range((2*cols + 1))]
+    even = [0 if i % 2 == 0 else 0 for i in range((2*cols + 1))]
     odd = [0] * (2*cols + 1)
     return np.array([even if i % 2 == 0 else odd for i in range((2*rows + 1))])
+
+def init_box_matrix(board_size):
+    rows = board_size[0]
+    cols = board_size[1]
+    return np.zeros([2*rows+1,2*cols+1])
 
 
 def convert_board_state_to_edge_matrix(board_size, board_state):
