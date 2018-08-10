@@ -6,7 +6,7 @@ from util.initializer_util import *
 
 
 class PGPolicy3x3CNN(Policy):
-    def __init__(self, board_size, batch_size=1, existing_params=None, dropout_keep_prob=1.0):
+    def __init__(self, board_size, num_channels=1,batch_size=1, existing_params=None, dropout_keep_prob=1.0):
         self._board_size = board_size
         self._batch_size = batch_size
         self._epsilon = 0.0
@@ -18,11 +18,12 @@ class PGPolicy3x3CNN(Policy):
         self._n_input_cols = edge_matrix.shape[1]
         self._n_hidden = 500
         self._n_output = len(init_board_state(board_size))
+        self._n_channels = num_channels
 
         # TF graph creation
         g = tf.Graph()
         with g.as_default():
-            self._input = tf.placeholder("float", [None, self._n_input_rows, self._n_input_cols], name="input")
+            self._input = tf.placeholder("float", [None, self._n_input_rows, self._n_input_cols,self._n_channels], name="input")
             self._action_taken = tf.placeholder("float", [None, self._n_output], name="action_taken")
             self._outcome = tf.placeholder(tf.float32, (None, 1), name="outcome")
             self._lr = tf.placeholder("float", shape=[], name="learning_rate")
@@ -40,7 +41,7 @@ class PGPolicy3x3CNN(Policy):
             self._b_in = tf.get_variable(shape=[self._n_hidden], initializer=b_in_initializer, name="b_in")
             self._W_out = tf.get_variable(shape=[self._n_hidden, self._n_output], initializer=W_out_initializer, name="W_out")
 
-            self._input_reshaped = tf.reshape(self._input, shape=[tf.shape(self._input)[0], self._n_input_rows, self._n_input_cols, 1])
+            #self._input_reshaped = tf.reshape(self._input, shape=[tf.shape(self._input)[0], self._n_input_rows, self._n_input_cols, 1])
 
             # Convolutional Layer 1
             # Computes 12 features using a 3x3 filter with ReLU activation.
@@ -48,7 +49,7 @@ class PGPolicy3x3CNN(Policy):
             # Input Tensor Shape (for the 3x3 board): [None, 7, 7, 1] (batch size, width, height, channels)
             # Output Tensor Shape: [None, 7, 7, 12]
             self._conv = tf.layers.conv2d(
-                inputs=self._input_reshaped,
+                inputs=self._input,
                 filters=12,
                 kernel_size=[3, 3],
                 strides=(1, 1),
