@@ -16,23 +16,29 @@ batch_size = 32
 decay_speed = 1.0
 use_symmetries = True
 num_episodes_per_policy_update = 100
+# episodes_per_thread = [100]  # 1 core
+# episodes_per_thread = [50, 50]  # 2 cores
+# episodes_per_thread = [33, 33, 34]  # 4 cores
 # episodes_per_thread = [14, 14, 14, 14, 14, 15, 15]  # 8 cores
 # episodes_per_thread = [6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]  # 16 cores
-episodes_per_thread = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2]  # 36 cores
+episodes_per_thread = [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2]  # 36 cores
 mcts_simulations = 100
 mcts_c = 5
-normalize_action_probs_with_softmax = False
+normalize_policy_probs_with_softmax = True
+activation = tf.nn.tanh
+normalize_combined_with_softmax = False
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-policy = PGPolicyCNN2(board_size, batch_size=batch_size)
-anti_policy = PGPolicyCNN2(board_size, batch_size=batch_size)
+policy = PGPolicyCNN2(board_size, batch_size=batch_size, activation=activation)
+anti_policy = PGPolicyCNN2(board_size, batch_size=batch_size, activation=activation)
 policy.set_boltzmann_action(False)
 policy.set_epsilon(0.0)
 anti_policy.set_boltzmann_action(False)
 anti_policy.set_epsilon(0.0)
-mcts_player = MCTSPolicyNetPolicyCpuct(board_size, num_playouts=mcts_simulations, cpuct=mcts_c)
+mcts_player = MCTSPolicyNetPolicyCpuct(board_size, num_playouts=mcts_simulations, cpuct=mcts_c,
+                                       normalize_policy_probs_with_softmax=normalize_policy_probs_with_softmax)
 reward_fn = DelayedBinaryReward()
 
 print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='MCTS ExIt', reward=reward_fn,
@@ -40,17 +46,18 @@ print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode
            architecture=policy.get_architecture(), batch_size=batch_size, decay_speed=decay_speed,
            num_episodes_per_policy_update=num_episodes_per_policy_update, episodes_per_thread=episodes_per_thread,
            mcts=mcts_player, mcts_simulations=mcts_simulations, mcts_c=mcts_c,
-           normalize_action_probs_with_softmax=normalize_action_probs_with_softmax)
+           normalize_action_probs_with_softmax=normalize_policy_probs_with_softmax, activation=activation)
 
 
 class CombinedPolicy:
-    def __init__(self, pol, anti_pol):
+    def __init__(self, pol, anti_pol, normalize_combined_with_softmax):
         self._pol = pol
         self._anti_pol = anti_pol
+        self._normalize_combined_with_softmax = normalize_combined_with_softmax
 
-    def get_action_probs(self, st):
-        policy_prob_map = self._pol.get_action_probs(st, normalize_action_probs_with_softmax)
-        anti_policy_prob_map = self._anti_pol.get_action_probs(st, normalize_action_probs_with_softmax)
+    def get_action_probs(self, st, normalize_with_softmax):
+        policy_prob_map = self._pol.get_action_probs(st, normalize_with_softmax)
+        anti_policy_prob_map = self._anti_pol.get_action_probs(st, normalize_with_softmax)
         diff_prob_map = {}
         for state in policy_prob_map:
             diff_prob_map[state] = policy_prob_map[state] - anti_policy_prob_map[state]
@@ -58,10 +65,10 @@ class CombinedPolicy:
             for s in diff_prob_map:
                 diff_prob_map[s] = 1.0
             return diff_prob_map
-        # normalize probs using softmax
-        exp_sum = np.sum(np.exp(np.array(list(diff_prob_map.values())) / temperature))
-        for state in diff_prob_map:
-            diff_prob_map[state] = np.exp(diff_prob_map[state] / temperature) / exp_sum
+        if self._normalize_combined_with_softmax:
+            exp_sum = np.sum(np.exp(np.array(list(diff_prob_map.values())) / temperature))
+            for state in diff_prob_map:
+                diff_prob_map[state] = np.exp(diff_prob_map[state] / temperature) / exp_sum
         return diff_prob_map
 
 
@@ -72,16 +79,17 @@ current_episode_num = 0
 
 
 def run_episodes(num_episodes_per_thread, existing_policy_params, existing_anti_policy_params):
-    local_policy = PGPolicyCNN2(board_size, batch_size=batch_size, existing_params=existing_policy_params)
-    local_anti_policy = PGPolicyCNN2(board_size, batch_size=batch_size, existing_params=existing_anti_policy_params)
-    pol = CombinedPolicy(local_policy, local_anti_policy)
+    local_policy = PGPolicyCNN2(board_size, batch_size=batch_size, existing_params=existing_policy_params, activation=activation)
+    local_anti_policy = PGPolicyCNN2(board_size, batch_size=batch_size, existing_params=existing_anti_policy_params, activation=activation)
+    pol = CombinedPolicy(local_policy, local_anti_policy, normalize_combined_with_softmax)
     run_transitions = []
     run_anti_transitions = []
     for episode_num in range(1, num_episodes_per_thread + 1):
         players = [0, 1] if episode_num % 2 == 0 else [1, 0]
         game = Game(board_size, players)
         current_player = game.get_current_player()
-        mcts = MCTSPolicyNetPolicyCpuct(board_size, num_playouts=mcts_simulations, cpuct=mcts_c)
+        mcts = MCTSPolicyNetPolicyCpuct(board_size, num_playouts=mcts_simulations, cpuct=mcts_c,
+                                        normalize_policy_probs_with_softmax=normalize_policy_probs_with_softmax)
 
         p0_actions = []
         p1_actions = []

@@ -42,7 +42,7 @@ def init_edge_matrix(board_size):
     rows = board_size[0]
     cols = board_size[1]
     even = [1 if i % 2 == 0 else 0 for i in range((2*cols + 1))]
-    odd = [0] * (2*cols + 1)
+    odd = [0.0] * (2*cols + 1)
     return np.array([even if i % 2 == 0 else odd for i in range((2*rows + 1))])
 
 

@@ -34,7 +34,7 @@ curr_policy.set_boltzmann_action(False)
 curr_policy.set_epsilon(0.0)
 mcts_player = MCTSPolicyNetPolicyCpuct(board_size, num_playouts=mcts_simulations, cpuct=mcts_c,
                                        normalize_policy_probs_with_softmax=normalize_policy_probs_with_softmax)
-reward_fn = DelayedBinaryReward()
+reward_fn = DelayedBinaryOneNegativeOneReward()
 
 print_info(board_size=board_size, num_episodes=num_episodes, policy=curr_policy, mode='MCTS ExIt', reward=reward_fn,
            updates='offline', learning_rate=learning_rate, min_learning_rate=min_learning_rate,
@@ -80,13 +80,10 @@ def run_episodes(num_episodes_per_thread, existing_params):
         p0_reward = reward_fn.compute_reward(game, 0, 1)
         p1_reward = reward_fn.compute_reward(game, 1, 0)
 
-        # don't add transitions that have 0 reward as the gradient will be zero anyways
-        if p0_reward == 1:
-            p0_outcomes = len(p0_actions)*[p0_reward]
-            append_transitions(p0_states, p0_actions, p0_outcomes, run_transitions, use_symmetries, board_size)
-        elif p1_reward == 1:
-            p1_outcomes = len(p1_actions)*[p1_reward]
-            append_transitions(p1_states, p1_actions, p1_outcomes, run_transitions, use_symmetries, board_size)
+        p0_outcomes = len(p0_actions)*[p0_reward]
+        append_transitions(p0_states, p0_actions, p0_outcomes, run_transitions, use_symmetries, board_size)
+        p1_outcomes = len(p1_actions)*[p1_reward]
+        append_transitions(p1_states, p1_actions, p1_outcomes, run_transitions, use_symmetries, board_size)
     return run_transitions
 
 

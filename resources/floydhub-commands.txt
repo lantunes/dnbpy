@@ -2,4 +2,4 @@ floyd run --env tensorflow --cpu2 'bash treelib_setup.sh && python -m ai.td1_gra
 
 floyd run --env tensorflow --cpu2 'bash treelib_setup.sh && python -m ai.tournament'
 
-floyd run --env tensorflow --cpu2 'bash treelib_setup.sh && python -m ai.pg_learning -b /output/'
+floyd run --env tensorflow --cpu2 'bash treelib_setup.sh && python -m ai.pg_learning_batch_exit_parallel_anti'

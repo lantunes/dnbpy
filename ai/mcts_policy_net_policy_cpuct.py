@@ -5,16 +5,37 @@ import math
 
 
 class MCTSPolicyNetPolicyCpuct:
-    def __init__(self, board_size, num_playouts, cpuct, default_policy=None):
+    def __init__(self, board_size, num_playouts, cpuct, default_policy=None, normalize_policy_probs_with_softmax=True):
         self._board_size = board_size
         self._num_playouts = num_playouts
         self._cpuct = cpuct
         self._default_policy = default_policy
+        self._normalize_policy_probs_with_softmax = normalize_policy_probs_with_softmax
 
     def set_num_playouts(self, num_playouts):
         self._num_playouts = num_playouts
 
     def select_edge(self, board_state, root_player_score, policy_net):
+        root_node = self._search(board_state, root_player_score, policy_net)
+
+        # return the move that was most visited
+        most_visited_node = sorted(root_node.children, key = lambda c: c.visits)[-1]
+        return self._get_selected_index(most_visited_node.state, board_state)
+
+    def get_action_probs(self, board_state, root_player_score, policy_net, temperature=1.):
+        root_node = self._search(board_state, root_player_score, policy_net)
+
+        action_visit_count_map = {}
+        for child in root_node.children:
+            action_visit_count_map[as_string(child.state)] = child.visits
+        # action probs are proportional to exponentiated visit count: N(s,a)^1/T / Sum_b N(s,b)^1/T
+        exponentiated_sum = np.sum(np.array(list(action_visit_count_map.values()))**(1./temperature))
+        action_prob_map = {}
+        for state in action_visit_count_map:
+            action_prob_map[state] = (action_visit_count_map[state]**(1./temperature)) / exponentiated_sum
+        return action_prob_map
+
+    def _search(self, board_state, root_player_score, policy_net):
         root_node = _Node(board_state, self._cpuct)
 
         # Perform playouts
@@ -41,7 +62,7 @@ class MCTSPolicyNetPolicyCpuct:
             # Expand
             if node.has_untried_moves():
                 # TODO: should try using a temperature, Beta, when getting action probs
-                action_prob_map = policy_net.get_action_probs(node.state)
+                action_prob_map = policy_net.get_action_probs(node.state, normalize_with_softmax=self._normalize_policy_probs_with_softmax)
                 move_state = node.select_untried_move()
                 if current_player == 'root':
                     root_player_states.append(move_state)
@@ -74,9 +95,7 @@ class MCTSPolicyNetPolicyCpuct:
                     node.wins += (1 if opponent_score > root_score else 0)
                 node = node.parent
 
-        # return the move that was most visited
-        most_visited_node = sorted(root_node.children, key = lambda c: c.visits)[-1]
-        return self._get_selected_index(most_visited_node.state, board_state)
+        return root_node
 
     def _get_selected_index(self, child_state, parent_state):
         diff = [x1 - x2 for (x1, x2) in zip(child_state, parent_state)]

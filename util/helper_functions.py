@@ -7,7 +7,8 @@ def print_info(board_size, policy, num_episodes, learning_rate=None, min_learnin
                learning_rate_schedule=None, epsilon_schedule=None, temperature_schedule=None,
                dropout_keep_prob=None, use_symmetries=None, num_episodes_per_policy_update=None,
                num_episodes_per_opponent_cache=None, opponent_pool_max_size=None, episodes_per_thread=None,
-               mcts=None, mcts_simulations=None, mcts_c=None, normalize_action_probs_with_softmax=None):
+               mcts=None, mcts_simulations=None, mcts_c=None, normalize_action_probs_with_softmax=None,
+               activation=None):
     print("board size: %sx%s" % board_size)
     print("policy: %s" % policy.__class__.__name__)
     if mcts is not None:
@@ -60,6 +61,8 @@ def print_info(board_size, policy, num_episodes, learning_rate=None, min_learnin
         print("# episodes per thread: %s" % episodes_per_thread)
     if normalize_action_probs_with_softmax is not None:
         print("normalize action probs with softmax: %s" % normalize_action_probs_with_softmax)
+    if activation is not None:
+        print("convolutional activation: %s" % activation.__name__)
 
 
 def to_one_hot_action(board_state, edge_index):

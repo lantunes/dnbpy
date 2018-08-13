@@ -2,22 +2,19 @@ from ai import *
 from dnbpy import *
 import tensorflow as tf
 import numpy as np
-from ai import MCTSPolicy2
 from util.initializer_util import *
 
 
-class PGPolicyMCTSCNN2(Policy):
+class PGPolicyCNN3(Policy):
     """
-    Adds a second convolutional layer.
+    Adds many convolutional layers.
     """
-    def __init__(self, board_size, mcts_policy, batch_size=1, existing_params=None, dropout_keep_prob=1.0, activation=tf.nn.relu):
-        self._sess = tf.Session()
+    def __init__(self, board_size, batch_size=1, existing_params=None, dropout_keep_prob=1.0, activation=tf.nn.relu):
         self._board_size = board_size
         self._batch_size = batch_size
         self._epsilon = 0.0
         self._temperature = 0.0
         self._dropout_keep_prob = dropout_keep_prob
-        self._mcts_policy = mcts_policy
         self._activation = activation
 
         edge_matrix = init_edge_matrix(board_size)
@@ -42,8 +39,12 @@ class PGPolicyMCTSCNN2(Policy):
             conv_bias_initializer = existing_param_initializer(existing_params, "conv2d/bias:0", tf.zeros_initializer())
             conv_kernel2_initializer = existing_param_initializer(existing_params, "conv2d_1/kernel:0", tf.random_normal_initializer(0.0, 0.1))
             conv_bias2_initializer = existing_param_initializer(existing_params, "conv2d_1/bias:0", tf.zeros_initializer())
+            conv_kernel3_initializer = existing_param_initializer(existing_params, "conv2d_2/kernel:0", tf.random_normal_initializer(0.0, 0.1))
+            conv_bias3_initializer = existing_param_initializer(existing_params, "conv2d_2/bias:0", tf.zeros_initializer())
+            conv_kernel4_initializer = existing_param_initializer(existing_params, "conv2d_3/kernel:0", tf.random_normal_initializer(0.0, 0.1))
+            conv_bias4_initializer = existing_param_initializer(existing_params, "conv2d_3/bias:0", tf.zeros_initializer())
 
-            self._W_in = tf.get_variable(shape=[3 * 3 * 24, self._n_hidden], initializer=W_in_initializer, name="W_in")
+            self._W_in = tf.get_variable(shape=[3 * 3 * 48, self._n_hidden], initializer=W_in_initializer, name="W_in")
             self._b_in = tf.get_variable(shape=[self._n_hidden], initializer=b_in_initializer, name="b_in")
             self._W_out = tf.get_variable(shape=[self._n_hidden, self._n_output], initializer=W_out_initializer, name="W_out")
 
@@ -66,28 +67,59 @@ class PGPolicyMCTSCNN2(Policy):
 
             # Convolutional Layer 2
             # Computes 24 features using a 3x3 filter with ReLU activation.
-            # No padding is added.
-            # Input Tensor Shape: [None, 5, 5, 12]
-            # Output Tensor Shape: [None, 3, 3, 24]
-            self._conv2 = tf.layers.conv2d(
-                inputs=self._conv,
+            # Padding is added to preserve width and height.
+            # Input Tensor Shape (for the 2x2 board): [None, 5, 5, 12] (batch size, width, height, channels)
+            # Output Tensor Shape: [None, 5, 5, 24]
+            self._conv = tf.layers.conv2d(
+                inputs=self._input_reshaped,
                 filters=24,
                 kernel_size=[3, 3],
                 strides=(1, 1),
+                padding="same",
                 kernel_initializer=conv_kernel2_initializer,
                 bias_initializer=conv_bias2_initializer,
                 activation=self._activation)
 
-            self._conv_flat = tf.reshape(self._conv2, [tf.shape(self._input)[0], 3 * 3 * 24])
+            # Convolutional Layer 3
+            # Computes 36 features using a 3x3 filter with ReLU activation.
+            # Padding is added to preserve width and height.
+            # Input Tensor Shape (for the 2x2 board): [None, 5, 5, 24] (batch size, width, height, channels)
+            # Output Tensor Shape: [None, 5, 5, 36]
+            self._conv = tf.layers.conv2d(
+                inputs=self._input_reshaped,
+                filters=36,
+                kernel_size=[3, 3],
+                strides=(1, 1),
+                padding="same",
+                kernel_initializer=conv_kernel3_initializer,
+                bias_initializer=conv_bias3_initializer,
+                activation=self._activation)
+
+            # Convolutional Layer 4
+            # Computes 48 features using a 3x3 filter with ReLU activation.
+            # No padding is added.
+            # Input Tensor Shape: [None, 5, 5, 36]
+            # Output Tensor Shape: [None, 3, 3, 48]
+            self._conv2 = tf.layers.conv2d(
+                inputs=self._conv,
+                filters=48,
+                kernel_size=[3, 3],
+                strides=(1, 1),
+                kernel_initializer=conv_kernel4_initializer,
+                bias_initializer=conv_bias4_initializer,
+                activation=self._activation)
+
+            self._conv_flat = tf.reshape(self._conv2, [tf.shape(self._input)[0], 3 * 3 * 48])
 
             dense_layer = tf.nn.tanh(tf.matmul(self._conv_flat, self._W_in) + self._b_in)
 
             drop_out = tf.nn.dropout(dense_layer, self._keep_prob)
 
+            # TODO: tf.matmul(drop_out, self._W_out) should be divided by a temperature (which is 1.0 by default)
             self._action_probs = tf.nn.softmax(tf.matmul(drop_out, self._W_out))
 
             self._cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-                logits=tf.matmul(dense_layer, self._W_out), labels=self._action_taken)
+                logits=tf.matmul(drop_out, self._W_out), labels=self._action_taken)
             self._loss = self._cross_entropy * self._outcome
             if self._batch_size > 1:
                 self._loss = tf.reduce_mean(self._loss)
@@ -97,17 +129,21 @@ class PGPolicyMCTSCNN2(Policy):
             self._conv2d_bias = [v for v in tf.global_variables() if v.name == 'conv2d/bias:0'][0]
             self._conv2d_kernel2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/kernel:0'][0]
             self._conv2d_bias2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/bias:0'][0]
+            self._conv2d_kernel3 = [v for v in tf.global_variables() if v.name == 'conv2d_2/kernel:0'][0]
+            self._conv2d_bias3 = [v for v in tf.global_variables() if v.name == 'conv2d_2/bias:0'][0]
+            self._conv2d_kernel4 = [v for v in tf.global_variables() if v.name == 'conv2d_3/kernel:0'][0]
+            self._conv2d_bias4 = [v for v in tf.global_variables() if v.name == 'conv2d_3/bias:0'][0]
 
         # TF session creation and initialization
-        self._sess = tf.Session(graph=g)
+        self._sess = tf.Session(graph=g, config=tf.ConfigProto(use_per_session_threads=True))
         with g.as_default():
             self._sess.run(tf.global_variables_initializer())
 
     def get_architecture(self):
-        return "5x5-conv(3x3, %s, 12)-conv(3x3, %s, 24)-tanh(300)-softmax(1)" % \
-               (self._activation.__name__, self._activation.__name__)
+        return "5x5-conv(3x3, %s, 12)-conv(3x3, %s, 24)-conv(3x3, %s, 36)-conv(3x3, %s, 48)-tanh(300)-softmax(1)" % \
+               (self._activation.__name__, self._activation.__name__, self._activation.__name__, self._activation.__name__)
 
-    def select_edge(self, board_state, player_score=None):
+    def select_edge(self, board_state):
         edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
         action_probs = self._sess.run([self._action_probs], feed_dict={
             self._input: [edge_matrix],
@@ -134,7 +170,7 @@ class PGPolicyMCTSCNN2(Policy):
         else:
             if random.random() < self._epsilon:
                 # do epsilon greedy action
-                return self._mcts_policy.select_edge(board_state, player_score)
+                return random.choice(zero_indices)
             else:
                 # return the legal action with the highest prob
                 highest_prob_index = random.choice(zero_indices)
@@ -148,6 +184,39 @@ class PGPolicyMCTSCNN2(Policy):
     def _softmax(self, x):
         e_x = np.exp(x - np.max(x))
         return e_x / e_x.sum()
+
+    def get_action_probs(self, board_state, normalize_with_softmax=False):
+        edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
+        action_probs = self._sess.run([self._action_probs], feed_dict={
+            self._input: [edge_matrix],
+            self._keep_prob: 1.0
+        })
+        # convert to 12D ndarray
+        action_probs = action_probs[0][0]
+
+        zero_indices = []  # indices of legal actions
+        for i in range(len(board_state)):
+            if board_state[i] == 0:
+                zero_indices.append(i)
+
+        legal_raw_probs = []
+        for z in zero_indices:
+            legal_raw_probs.append(action_probs[z])
+        if normalize_with_softmax:
+            legal_normalized_probs = self._softmax(legal_raw_probs)
+        else:
+            legal_normalized_probs = self._normalize(legal_raw_probs)
+
+        action_prob_map = {}
+        for i in range(len(zero_indices)):
+            action_state = [x for x in board_state]
+            action_state[zero_indices[i]] = 1
+            action_prob_map[as_string(action_state)] = legal_normalized_probs[i]
+        return action_prob_map
+
+    def _normalize(self, probs):
+        prob_factor = 1 / sum(probs)
+        return np.array([prob_factor * p for p in probs])
 
     def get_temperature(self):
         return self._temperature
@@ -209,10 +278,18 @@ class PGPolicyMCTSCNN2(Policy):
         params_map["conv2d_1/kernel:0"] = params[0].tolist()
         params = self._sess.run([self._conv2d_bias2])
         params_map["conv2d_1/bias:0"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_kernel3])
+        params_map["conv2d_2/kernel:0"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_bias3])
+        params_map["conv2d_2/bias:0"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_kernel4])
+        params_map["conv2d_3/kernel:0"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_bias4])
+        params_map["conv2d_3/bias:0"] = params[0].tolist()
         return params_map
 
     def copy(self):
-        policy_copy = type(self)(self._board_size, self._mcts_policy, self._batch_size, self.get_params())
+        policy_copy = type(self)(self._board_size, self._batch_size, self.get_params())
         policy_copy.set_temperature(self.get_temperature())
         policy_copy.set_epsilon(self.get_epsilon())
         policy_copy.set_boltzmann_action(self.is_boltzmann_action())
@@ -233,3 +310,11 @@ class PGPolicyMCTSCNN2(Policy):
         f.write("conv2d_1/kernel:0: %s\n" % params[0].tolist())
         params = self._sess.run([self._conv2d_bias2])
         f.write("conv2d_1/bias:0: %s\n" % params[0].tolist())
+        params = self._sess.run([self._conv2d_kernel3])
+        f.write("conv2d_2/kernel:0: %s\n" % params[0].tolist())
+        params = self._sess.run([self._conv2d_bias3])
+        f.write("conv2d_2/bias:0: %s\n" % params[0].tolist())
+        params = self._sess.run([self._conv2d_kernel4])
+        f.write("conv2d_3/kernel:0: %s\n" % params[0].tolist())
+        params = self._sess.run([self._conv2d_bias4])
+        f.write("conv2d_3/bias:0: %s\n" % params[0].tolist())

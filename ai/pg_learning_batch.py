@@ -14,17 +14,18 @@ min_epsilon = 0.1
 batch_size = 32
 decay_speed = 1.0
 use_symmetries = True
+activation = tf.nn.tanh
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-policy = PGPolicyCNN2(board_size, batch_size=batch_size)
+policy = PGPolicyCNN2(board_size, batch_size=batch_size, activation=activation)
 reward_fn = DelayedBinaryReward()
 
 print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward=reward_fn,
            updates='offline', learning_rate_schedule=learning_rate_schedule, epsilon=epsilon,
            min_epsilon=min_epsilon, architecture=policy.get_architecture(), batch_size=batch_size,
-           decay_speed=decay_speed)
+           decay_speed=decay_speed, activation=activation)
 
 unique_states_visited = set()
 all_transitions = []

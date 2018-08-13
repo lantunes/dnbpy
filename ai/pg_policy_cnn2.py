@@ -9,12 +9,13 @@ class PGPolicyCNN2(Policy):
     """
     Adds a second convolutional layer.
     """
-    def __init__(self, board_size, batch_size=1, existing_params=None, dropout_keep_prob=1.0):
+    def __init__(self, board_size, batch_size=1, existing_params=None, dropout_keep_prob=1.0, activation=tf.nn.relu):
         self._board_size = board_size
         self._batch_size = batch_size
         self._epsilon = 0.0
         self._temperature = 0.0
         self._dropout_keep_prob = dropout_keep_prob
+        self._activation = activation
 
         edge_matrix = init_edge_matrix(board_size)
         self._n_input_rows = edge_matrix.shape[0]
@@ -58,7 +59,7 @@ class PGPolicyCNN2(Policy):
                 padding="same",
                 kernel_initializer=conv_kernel_initializer,
                 bias_initializer=conv_bias_initializer,
-                activation=tf.nn.relu)
+                activation=self._activation)
 
             # Convolutional Layer 2
             # Computes 24 features using a 3x3 filter with ReLU activation.
@@ -72,7 +73,7 @@ class PGPolicyCNN2(Policy):
                 strides=(1, 1),
                 kernel_initializer=conv_kernel2_initializer,
                 bias_initializer=conv_bias2_initializer,
-                activation=tf.nn.relu)
+                activation=self._activation)
 
             self._conv_flat = tf.reshape(self._conv2, [tf.shape(self._input)[0], 3 * 3 * 24])
 
@@ -101,7 +102,8 @@ class PGPolicyCNN2(Policy):
             self._sess.run(tf.global_variables_initializer())
 
     def get_architecture(self):
-        return "5x5-conv(3x3, relu, 12)-conv(3x3, relu, 24)-tanh(300)-softmax(1)"
+        return "5x5-conv(3x3, %s, 12)-conv(3x3, %s, 24)-tanh(300)-softmax(1)" % \
+               (self._activation.__name__, self._activation.__name__)
 
     def select_edge(self, board_state):
         edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)

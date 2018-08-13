@@ -11,6 +11,9 @@ class OpponentPool:
         self._opponent_pool.append(agent)
         self._opponent_pool = self._opponent_pool[-self._opponent_pool_max_size:]
 
+    def get_opponents(self):
+        return list(self._opponent_pool)
+
     def sample_opponent(self, epsilon=0.0):
         if random.random() < epsilon:
             return RandomPolicy()

@@ -14,18 +14,19 @@ batch_size = 32
 decay_speed = 1.0
 use_symmetries = True
 num_episodes_per_policy_update = 100
+activation = tf.nn.tanh
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-policy = PGPolicyCNN2(board_size, batch_size=batch_size)
+policy = PGPolicyCNN2(board_size, batch_size=batch_size, activation=activation)
 mcts_player = MCTSPolicyNetPolicy(board_size, num_playouts=100, w=10)
 reward_fn = DelayedBinaryReward()
 
 print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='MCTS ExIt', reward=reward_fn,
            updates='offline', learning_rate=learning_rate, min_learning_rate=min_learning_rate,
            architecture=policy.get_architecture(), batch_size=batch_size, decay_speed=decay_speed,
-           num_episodes_per_policy_update=num_episodes_per_policy_update)
+           num_episodes_per_policy_update=num_episodes_per_policy_update, activation=activation)
 
 unique_states_visited = set()
 all_transitions = []

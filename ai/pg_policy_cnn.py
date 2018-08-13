@@ -5,10 +5,11 @@ import numpy as np
 
 
 class PGPolicyCNN(Policy):
-    def __init__(self, board_size, batch_size=1):
+    def __init__(self, board_size, batch_size=1, activation=tf.nn.relu):
         self._sess = tf.Session()
         self._board_size = board_size
         self._batch_size = batch_size
+        self._activation = activation
 
         edge_matrix = init_edge_matrix(board_size)
         self._n_input_rows = edge_matrix.shape[0]
@@ -39,7 +40,7 @@ class PGPolicyCNN(Policy):
             strides=(1, 1),
             padding="same",
             kernel_initializer=tf.random_normal_initializer(0.0, 0.1),
-            activation=tf.nn.relu)
+            activation=self._activation)
 
         self._conv_flat = tf.reshape(self._conv, [tf.shape(self._input)[0], 5 * 5 * 12])
 
@@ -60,7 +61,7 @@ class PGPolicyCNN(Policy):
         self._sess.run(tf.global_variables_initializer())
 
     def get_architecture(self):
-        return "5x5-conv(3x3, relu, 12)-tanh(300)-softmax(1)"
+        return "5x5-conv(3x3, %s, 12)-tanh(300)-softmax(1)" % (self._activation.__name__)
 
     def select_edge(self, board_state):
         edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
