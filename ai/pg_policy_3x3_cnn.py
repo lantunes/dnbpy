@@ -3,16 +3,16 @@ from dnbpy import *
 import tensorflow as tf
 import numpy as np
 from util.initializer_util import *
-import os
+
 
 class PGPolicy3x3CNN(Policy):
-    def __init__(self, board_size, batch_size=1, existing_params=None, dropout_keep_prob=1.0):
-        self._sess = tf.Session()
+    def __init__(self, board_size, batch_size=1, existing_params=None, dropout_keep_prob=1.0, activation=tf.nn.relu):
         self._board_size = board_size
         self._batch_size = batch_size
         self._epsilon = 0.0
         self._temperature = 0.0
         self._dropout_keep_prob = dropout_keep_prob
+        self._activation = activation
 
         edge_matrix = init_edge_matrix(board_size)
         self._n_input_rows = edge_matrix.shape[0]
@@ -21,8 +21,8 @@ class PGPolicy3x3CNN(Policy):
         self._n_output = len(init_board_state(board_size))
 
         # TF graph creation
-        self.g = tf.Graph()
-        with self.g.as_default():
+        g = tf.Graph()
+        with g.as_default():
             self._input = tf.placeholder("float", [None, self._n_input_rows, self._n_input_cols], name="input")
             self._action_taken = tf.placeholder("float", [None, self._n_output], name="action_taken")
             self._outcome = tf.placeholder(tf.float32, (None, 1), name="outcome")
@@ -56,7 +56,7 @@ class PGPolicy3x3CNN(Policy):
                 padding="same",
                 kernel_initializer=conv_kernel_initializer,
                 bias_initializer=conv_bias_initializer,
-                activation=tf.nn.relu)
+                activation=self._activation)
 
             # Convolutional Layer 2
             # Computes 24 features using a 3x3 filter with ReLU activation.
@@ -70,7 +70,7 @@ class PGPolicy3x3CNN(Policy):
                 strides=(1, 1),
                 kernel_initializer=conv_kernel2_initializer,
                 bias_initializer=conv_bias2_initializer,
-                activation=tf.nn.relu)
+                activation=self._activation)
 
             self._conv_flat = tf.reshape(self._conv2, [tf.shape(self._input)[0], 5 * 5 * 24])
 
@@ -78,6 +78,7 @@ class PGPolicy3x3CNN(Policy):
 
             drop_out = tf.nn.dropout(dense_layer, self._keep_prob)
 
+            # TODO: tf.matmul(drop_out, self._W_out) should be divided by a temperature (which is 1.0 by default)
             self._action_probs = tf.nn.softmax(tf.matmul(drop_out, self._W_out))
 
             self._cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
@@ -91,17 +92,15 @@ class PGPolicy3x3CNN(Policy):
             self._conv2d_bias = [v for v in tf.global_variables() if v.name == 'conv2d/bias:0'][0]
             self._conv2d_kernel2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/kernel:0'][0]
             self._conv2d_bias2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/bias:0'][0]
-            self.saver = tf.train.Saver()
 
         # TF session creation and initialization
-        self._sess = tf.Session(graph=self.g)
-        with self.g.as_default():
+        self._sess = tf.Session(graph=g, config=tf.ConfigProto(use_per_session_threads=True))
+        with g.as_default():
             self._sess.run(tf.global_variables_initializer())
 
-
-
     def get_architecture(self):
-        return "7x7-conv(3x3, relu, 12)-conv(3x3, relu, 24)-tanh(500)-softmax(1)"
+        return "7x7-conv(3x3, %s, 12)-conv(3x3, %s, 24)-tanh(500)-softmax(1)" % \
+               (self._activation.__name__, self._activation.__name__)
 
     def select_edge(self, board_state):
         edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
@@ -145,6 +144,39 @@ class PGPolicy3x3CNN(Policy):
         e_x = np.exp(x - np.max(x))
         return e_x / e_x.sum()
 
+    def get_action_probs(self, board_state, normalize_with_softmax=False):
+        edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
+        action_probs = self._sess.run([self._action_probs], feed_dict={
+            self._input: [edge_matrix],
+            self._keep_prob: 1.0
+        })
+        # convert to ndarray
+        action_probs = action_probs[0][0]
+
+        zero_indices = []  # indices of legal actions
+        for i in range(len(board_state)):
+            if board_state[i] == 0:
+                zero_indices.append(i)
+
+        legal_raw_probs = []
+        for z in zero_indices:
+            legal_raw_probs.append(action_probs[z])
+        if normalize_with_softmax:
+            legal_normalized_probs = self._softmax(legal_raw_probs)
+        else:
+            legal_normalized_probs = self._normalize(legal_raw_probs)
+
+        action_prob_map = {}
+        for i in range(len(zero_indices)):
+            action_state = [x for x in board_state]
+            action_state[zero_indices[i]] = 1
+            action_prob_map[as_string(action_state)] = legal_normalized_probs[i]
+        return action_prob_map
+
+    def _normalize(self, probs):
+        prob_factor = 1 / sum(probs)
+        return np.array([prob_factor * p for p in probs])
+
     def get_temperature(self):
         return self._temperature
 
@@ -169,18 +201,14 @@ class PGPolicy3x3CNN(Policy):
     def set_learning_rate(self, lr):
         self._learning_rate = lr
 
-    def update_model(self, transitions,mean_return=None,std_return=None):
+    def update_model(self, transitions):
         np.random.shuffle(transitions)
         batches = list(self._minibatches(transitions, batch_size=self._batch_size))
         for b in range(len(batches)):
             batch = batches[b]
             states = [convert_board_state_to_edge_matrix(self._board_size, row[0]) for row in batch]
             actions = [row[1] for row in batch]
-            if not mean_return:
-                outcomes = [[row[2]] for row in batch]
-            else:
-                outcomes = [([row[2]]-mean_return)/std_return for row in batch]
-
+            outcomes = [[row[2]] for row in batch]
             self._sess.run([self._train_op], {
                 self._input:        states,
                 self._action_taken: actions,
@@ -192,24 +220,6 @@ class PGPolicy3x3CNN(Policy):
     def _minibatches(self, samples, batch_size):
         for i in range(0, len(samples), batch_size):
             yield samples[i:i + batch_size]
-
-    def store_model(self,path,model_name):
-        """
-        :Stores the whole model in the given path
-        :param path:
-        :param model_name:
-        :return:
-        """
-        save_path = self.saver.save(self._sess,os.path.join(path, model_name))
-
-    def restore_model(self, path):
-        """
-        :This restores the base CNN model
-        :param path: The path to the base-CNN model
-        :return:
-        """
-        with self.g.as_default():
-            self.saver.restore(self._sess, path)
 
     def get_params(self):
         params_map = {}

@@ -38,3 +38,14 @@ def duel(board_size, p1, p2):
             else:
                 results['tied'] += 1
     return results
+
+
+def tournament(board_size, policy, opponent_pool):
+    opponents = opponent_pool.get_opponents()
+    tournament_results = {'won': 0, 'lost': 0, 'tied': 0}
+    for opponent in opponents:
+        results = duel(board_size, policy, opponent)
+        tournament_results['won'] += results['won']
+        tournament_results['lost'] += results['lost']
+        tournament_results['tied'] += results['tied']
+    return tournament_results
