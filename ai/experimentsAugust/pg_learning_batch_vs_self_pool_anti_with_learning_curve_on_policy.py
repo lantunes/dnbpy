@@ -1,0 +1,187 @@
+import sys
+sys.path.append("/Users/u6042446/Desktop/dnbpy/")
+from ai import *
+from dnbpy import *
+from util.helper_functions import *
+from util.file_helper import *
+from util.reward_util import *
+from util.rate_util import *
+from util.evaluator import *
+from util.opponent_pool_util import *
+from util.duel import *
+
+board_size = (3, 3)
+num_episodes = 1000000
+learning_rate_schedule = {0: 0.005}
+epsilon_schedule = {0: 0.9, 10000: 0.85, 20000: 0.8, 30000: 0.75, 40000: 0.65, 50000: 0.55, 60000: 0.45, 70000: 0.35}
+batch_size = 32
+decay_speed = 1.0
+opponent_pool_max_size = 100
+num_episodes_per_update = 500
+dropout_keep_prob = 1.0
+use_symmetries = True
+normalize_action_probs_with_softmax = False
+#base_path = get_base_path_arg()
+base_path = "/Users/u6042446/Desktop/new_Luis/dnbpy/ai/"
+
+print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
+
+policy = PGPolicy3x3CNN(board_size, batch_size=batch_size, dropout_keep_prob=dropout_keep_prob)
+anti_policy = PGPolicy3x3CNN(board_size, batch_size=batch_size, dropout_keep_prob=dropout_keep_prob)
+policy.set_boltzmann_action(False)
+anti_policy.set_boltzmann_action(False)
+opponent = policy.copy()
+anti_opponent = anti_policy.copy()
+reward_fn = DelayedBinaryReward()
+#reward_fn = DelayedShapedReward()
+opponent_pool = OpponentPool(max_size=opponent_pool_max_size)
+
+print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play pool', reward=reward_fn,
+           updates='offline', learning_rate_schedule=learning_rate_schedule, epsilon_schedule=epsilon_schedule,
+           architecture=policy.get_architecture(), batch_size=batch_size, decay_speed=decay_speed,
+           dropout_keep_prob=dropout_keep_prob, use_symmetries=use_symmetries,
+           num_episodes_per_policy_update=num_episodes_per_update,
+           num_episodes_per_opponent_cache=num_episodes_per_update, opponent_pool_max_size=opponent_pool_max_size)
+
+
+def select_edge_with_anti(pol, anti_pol=None, board_state=None):
+
+    def get_selected_index(child_state, parent_state):
+        diff = [x1 - x2 for (x1, x2) in zip(child_state, parent_state)]
+        argmax = max(enumerate(diff), key=lambda x: x[1])[0]
+        return argmax
+
+    policy_prob_map = pol.get_action_probs(board_state, normalize_action_probs_with_softmax)
+    if not not anti_pol:
+        anti_policy_prob_map = anti_pol.get_action_probs(board_state, normalize_action_probs_with_softmax)
+    else:
+        anti_policy_prob_map = None
+    two_side_prob = {}
+
+    sum_probs = 0
+    states = []
+    probs = []
+    for state in policy_prob_map:
+        if not not anti_pol:
+            ensemble_prob = (policy_prob_map[state] +(1- anti_policy_prob_map[state]))/2.0
+        else:
+            ensemble_prob = policy_prob_map[state]
+        sum_probs+= ensemble_prob
+        states.append(state)
+        probs.append(ensemble_prob)
+        two_side_prob[state] = ensemble_prob
+        #diff_prob_map[state] = policy_prob_map[state] - anti_policy_prob_map[state]
+
+    probs = np.array(probs)/sum_probs
+    #Draw a sample
+    selected_index = np.random.multinomial(1,probs).argmax()
+    selected_state = states[selected_index]
+
+    return get_selected_index([int(i) for i in selected_state], board_state)
+
+
+class PolicyForEvaluation(Policy):
+    def __init__(self, pol, anti_pol):
+        self._pol = pol
+        self._anti_pol = anti_pol
+
+    def select_edge(self, st):
+        return select_edge_with_anti(self._pol, self._anti_pol, st, 0.0)
+
+
+unique_states_visited = set()
+all_transitions = []
+all_anti_transitions = []
+reward_saver = []
+for episode_num in range(1, num_episodes + 1):
+    epsilon = gen_rate_step(episode_num, epsilon_schedule)
+    lr = gen_rate_step(episode_num, learning_rate_schedule)
+
+    policy.set_epsilon(epsilon)
+    policy.set_learning_rate(lr)
+    anti_policy.set_epsilon(epsilon)
+    anti_policy.set_learning_rate(lr)
+
+    policy_actions = []
+    opponent_actions = []
+    policy_states = []
+    opponent_states = []
+
+    players = ['policy', 'opponent'] if episode_num % 2 == 0 else ['opponent', 'policy']
+    game = Game(board_size, players)
+    current_player = game.get_current_player()
+    while not game.is_finished():
+        board_state = game.get_board_state()
+        if current_player == 'policy':
+            policy_states.append(board_state)
+            edge = select_edge_with_anti(policy, anti_policy, board_state)
+            policy_actions.append(to_one_hot_action(board_state, edge))
+            current_player, _ = game.select_edge(edge, current_player)
+            unique_states_visited.add(as_string(game.get_board_state()))
+        else:
+            opponent_states.append(board_state)
+            edge = select_edge_with_anti(opponent, anti_opponent, board_state)
+            opponent_actions.append(to_one_hot_action(board_state, edge))
+            current_player, _ = game.select_edge(edge, current_player)
+            unique_states_visited.add(as_string(game.get_board_state()))
+    policy_reward = reward_fn.compute_reward(game, 'policy', 'opponent')
+    opponent_reward = reward_fn.compute_reward(game, 'opponent', 'policy')
+    #reward_saver.append(policy_reward)
+    #reward_saver.append(opponent_reward)
+
+
+    if policy_reward == 1:
+        policy_outcomes = len(policy_actions)*[policy_reward]
+        append_transitions(policy_states, policy_actions, policy_outcomes, all_transitions, use_symmetries, board_size)
+        opponent_outcomes = len(opponent_actions)*[policy_reward]
+        append_transitions(opponent_states, opponent_actions, opponent_outcomes, all_anti_transitions, use_symmetries, board_size)
+    elif opponent_reward == 1:
+        opponent_outcomes = len(opponent_actions)*[opponent_reward]
+        append_transitions(opponent_states, opponent_actions, opponent_outcomes, all_transitions, use_symmetries, board_size)
+        policy_outcomes = len(policy_actions)*[opponent_reward]
+        append_transitions(policy_states, policy_actions, policy_outcomes, all_anti_transitions, use_symmetries, board_size)
+
+    if episode_num % num_episodes_per_update == 0:
+        print(episode_num)
+        #sys.exit(0)
+        policy.update_model(all_transitions)
+        anti_policy.update_model(all_anti_transitions)
+        opponent_pool.add_to_pool((policy.copy(), anti_policy.copy()))
+        all_transitions = []
+        all_anti_transitions = []
+        opponent, anti_opponent = opponent_pool.sample_opponent()
+
+    # analyze results
+    if episode_num % 5000 == 0:
+        policy.set_boltzmann_action(False)
+        policy.set_epsilon(0.0)
+        anti_policy.set_boltzmann_action(False)
+        anti_policy.set_epsilon(0.0)
+
+        results_self = {'won': 0, 'lost': 0, 'tied': 0}
+        for p in opponent_pool._opponent_pool[0:-1]:
+            this_result = duel(board_size, policy, p[0])
+            results_self['won'] += this_result['won']
+            results_self['lost'] += this_result['lost']
+
+        winning_rate = (1.0*results_self['won']/(results_self['lost']+results_self['won']))
+        print("%s,%s,%s" % (episode_num,winning_rate,len(opponent_pool._opponent_pool)-1))
+
+
+        """
+        opponents = [RandomPolicy(), Level1HeuristicPolicy(board_size), Level2HeuristicPolicy(board_size)]
+
+        results = evaluate(policy, board_size, 1000, opponents)
+
+        combined_policy = PolicyForEvaluation(policy, anti_policy)
+        combined_results = evaluate(combined_policy, board_size, 1000, opponents)
+
+        print("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s" % (episode_num, results[RandomPolicy.__name__]['won'],
+                                                  results[Level1HeuristicPolicy.__name__]['won'],
+                                                  results[Level2HeuristicPolicy.__name__]['won'],
+                                                  combined_results[RandomPolicy.__name__]['won'],
+                                                  combined_results[Level1HeuristicPolicy.__name__]['won'],
+                                                  combined_results[Level2HeuristicPolicy.__name__]['won'],
+                                                  results, len(unique_states_visited), epsilon, lr))
+        #WeightWriter.print_episode(base_path, episode_num, policy.print_params)
+        """
