@@ -6,9 +6,10 @@ from util.initializer_util import *
 
 
 class PGPolicy3x3CNN(Policy):
-    def __init__(self, board_size, batch_size=1, existing_params=None, dropout_keep_prob=1.0, activation=tf.nn.relu):
+    def __init__(self, board_size, n_channels = 1, batch_size=1, existing_params=None, dropout_keep_prob=1.0, activation=tf.nn.relu):
         self._board_size = board_size
         self._batch_size = batch_size
+        self._n_channels = n_channels
         self._epsilon = 0.0
         self._temperature = 0.0
         self._dropout_keep_prob = dropout_keep_prob
@@ -240,7 +241,7 @@ class PGPolicy3x3CNN(Policy):
         return params_map
 
     def copy(self):
-        policy_copy = type(self)(self._board_size, self._batch_size, self.get_params())
+        policy_copy = type(self)(self._board_size,self._n_channels, self._batch_size, self.get_params())
         policy_copy.set_temperature(self.get_temperature())
         policy_copy.set_epsilon(self.get_epsilon())
         policy_copy.set_boltzmann_action(self.is_boltzmann_action())

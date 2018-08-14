@@ -65,7 +65,9 @@ def to_one_hot_action(board_state, edge_index):
 
 
 def to_state_action_pair_symmetries(board_size, state, action):
-    state_edge_matrix = convert_board_state_to_edge_matrix(board_size, state)
+    #state_edge_matrix = convert_board_state_to_edge_matrix(board_size, state)
+    state_edge_matrix = state[0,:,:,0]
+    state_box_matrix = state[0,:,:,1]
     action_edge_matrix = convert_board_state_to_edge_matrix(board_size, action)
     # I symmetry
     state_i = np.array(state_edge_matrix)
@@ -77,34 +79,57 @@ def to_state_action_pair_symmetries(board_size, state, action):
         # S symmetry
         state_s = np.flip(state_i, 1)
         action_s = np.flip(action_i, 1)
+        box_s = np.flip(state_box_matrix,1)
+        new_state_s = np.concatenate([np.reshape(state_s,(1,)+np.shape(state_s)+(1,)),np.reshape(box_s,(1,)+np.shape(box_s)+(1,))],axis=3)
 
         # R symmetry
         state_r = np.rot90(state_i, 1)
         action_r = np.rot90(action_i, 1)
+        box_r = np.rot90(state_box_matrix,1)
+        new_state_r = np.concatenate([np.reshape(state_r, (1,) + np.shape(state_r) + (1,)),
+                       np.reshape(box_r, (1,) + np.shape(box_r) + (1,))],axis=3)
+
 
         # R^2 symmetry
         state_r2 = np.rot90(state_i, 2)
         action_r2 = np.rot90(action_i, 2)
+        box_r2 = np.rot90(state_box_matrix,2)
+        new_state_r2 = np.concatenate([np.reshape(state_r2, (1,) + np.shape(state_r2) + (1,)),
+                       np.reshape(box_r2, (1,) + np.shape(box_r2) + (1,))],axis=3)
 
         # R^3 symmetry
         state_r3 = np.rot90(state_i, 3)
         action_r3 = np.rot90(action_i, 3)
+        box_r3 = np.rot90(state_box_matrix,3)
+        new_state_r3 = np.concatenate([np.reshape(state_r3, (1,) + np.shape(state_r3) + (1,)),
+                       np.reshape(box_r3, (1,) + np.shape(box_r3) + (1,))],axis=3)
 
         # SR symmetry
         state_sr = np.rot90(state_s, 1)
         action_sr = np.rot90(action_s, 1)
+        box_sr = np.rot90(box_s,1)
+        new_state_sr = np.concatenate([np.reshape(state_sr, (1,) + np.shape(state_sr) + (1,)),
+                       np.reshape(box_sr, (1,) + np.shape(box_sr) + (1,))],axis=3)
 
         # SR^2 symmetry
         state_sr2 = np.rot90(state_s, 2)
         action_sr2 = np.rot90(action_s, 2)
+        box_sr2 = np.rot90(box_s,2)
+        new_state_sr2 = np.concatenate([np.reshape(state_sr2, (1,) + np.shape(state_sr2) + (1,)),
+                       np.reshape(box_sr2, (1,) + np.shape(box_sr2) + (1,))],axis=3)
 
         # SR^3 symmetry
         state_sr3 = np.rot90(state_s, 3)
         action_sr3 = np.rot90(action_s, 3)
+        box_sr3 = np.rot90(box_s,3)
+        new_state_sr3 = np.concatenate([np.reshape(state_sr3, (1,) + np.shape(state_sr3) + (1,)),
+                       np.reshape(box_sr3, (1,) + np.shape(box_sr3) + (1,))],axis=3)
 
-        all_possible = [[state_i, action_i], [state_s, action_s], [state_r, action_r],
-                        [state_r2, action_r2], [state_r3, action_r3], [state_sr, action_sr],
-                        [state_sr2, action_sr2], [state_sr3, action_sr3]]
+
+        all_possible = [[state, action_i], [new_state_s, action_s], [new_state_r, action_r],
+                        [new_state_r2, action_r2], [new_state_r3, action_r3], [new_state_sr, action_sr],
+                        [new_state_sr2, action_sr2], [new_state_sr3, action_sr3]]
+
     else:
         # S symmetry
         state_s = np.flip(state_i, 1)
@@ -129,14 +154,14 @@ def to_state_action_pair_symmetries(board_size, state, action):
     symmetries = []
     for sym in all_possible:
         if not contains(symmetries, sym):
-            symmetries.append([convert_edge_matrix_to_board_state(sym[0]), convert_edge_matrix_to_board_state(sym[1])])
+            symmetries.append([sym[0], convert_edge_matrix_to_board_state(sym[1])])
 
     return symmetries
 
 
 def append_transitions(states, actions, outcomes, all_transitions, use_symmetries, board_size):
     for i, _ in enumerate(actions):
-        state = states[i]
+        state = states[i] #this is itself another list of states
         action = actions[i]
         reward = outcomes[i]
         if use_symmetries:

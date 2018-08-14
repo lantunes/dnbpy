@@ -1,7 +1,26 @@
 from dnbpy import *
+import operator
 
 
-def duel(board_size, p1, p2):
+def get_selected_index(child_state, parent_state):
+    diff = [x1 - x2 for (x1, x2) in zip(child_state, parent_state)]
+    argmax = max(enumerate(diff), key=lambda x: x[1])[0]
+    return argmax
+
+def get_best_action(board_state,policy_action_map,anti_policy_action_map):
+
+    state_prob_map = {}
+    for state in policy_action_map:
+        policy_prob = policy_action_map[state]
+        anti_policy_prob = 1-anti_policy_action_map[state]
+        state_prob_map[state] = max(policy_prob,anti_policy_prob)
+
+    sorted_map = sorted(state_prob_map.items(),key=operator.itemgetter(1),reverse=True)
+    best_state = sorted_map[0][0]
+    return get_selected_index([int(i) for i in best_state], board_state)
+
+
+def duel(board_size, p1, p2,antip1=None,antip2=None):
     """
     :param board_size: the game's board size 
     :param p1: the first player
@@ -24,13 +43,28 @@ def duel(board_size, p1, p2):
             while not game.is_finished():
                 board_state = game.get_board_state()
                 if current_player == 0:
-                    edge = p1.select_edge(board_state)
+                    if not antip1:
+                        edge = p1.select_edge(board_state)
+                    else:
+                        policy_action_prob = p1.get_action_probs(board_state)
+                        anti_policy_action_prob = antip1.get_action_probs(board_state)
+                        edge = get_best_action(board_state,policy_action_prob,anti_policy_action_prob)
+                    #edge = p1.select_edge(board_state)
+
                     current_player, _ = game.select_edge(edge, current_player)
                 else:
-                    edge = p2.select_edge(board_state)
+                    if not antip2:
+                        edge = p2.select_edge(board_state)
+                    else:
+                        policy_action_prob = p2.get_action_probs(board_state)
+                        anti_policy_action_prob = antip2.get_action_probs(board_state)
+                        edge = get_best_action(board_state, policy_action_prob, anti_policy_action_prob)
+                    #edge = p2.select_edge(board_state)
                     current_player, _ = game.select_edge(edge, current_player)
             p1_score = game.get_score(0)
             p2_score = game.get_score(1)
+            #if not not antip1 and not not antip2:
+
             if p1_score > p2_score:
                 results['won'] += 1
             elif p2_score > p1_score:
