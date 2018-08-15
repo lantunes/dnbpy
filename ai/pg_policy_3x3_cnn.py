@@ -24,7 +24,7 @@ class PGPolicy3x3CNN(Policy):
         # TF graph creation
         g = tf.Graph()
         with g.as_default():
-            self._input = tf.placeholder("float", [None, self._n_input_rows, self._n_input_cols], name="input")
+            self._input = tf.placeholder("float", [None, self._n_input_rows, self._n_input_cols,self._n_channels], name="input")
             self._action_taken = tf.placeholder("float", [None, self._n_output], name="action_taken")
             self._outcome = tf.placeholder(tf.float32, (None, 1), name="outcome")
             self._lr = tf.placeholder("float", shape=[], name="learning_rate")
@@ -42,7 +42,7 @@ class PGPolicy3x3CNN(Policy):
             self._b_in = tf.get_variable(shape=[self._n_hidden], initializer=b_in_initializer, name="b_in")
             self._W_out = tf.get_variable(shape=[self._n_hidden, self._n_output], initializer=W_out_initializer, name="W_out")
 
-            self._input_reshaped = tf.reshape(self._input, shape=[tf.shape(self._input)[0], self._n_input_rows, self._n_input_cols, 1])
+            #self._input_reshaped = tf.reshape(self._input, shape=[tf.shape(self._input)[0], self._n_input_rows, self._n_input_cols, 1])
 
             # Convolutional Layer 1
             # Computes 12 features using a 3x3 filter with ReLU activation.
@@ -50,9 +50,9 @@ class PGPolicy3x3CNN(Policy):
             # Input Tensor Shape (for the 3x3 board): [None, 7, 7, 1] (batch size, width, height, channels)
             # Output Tensor Shape: [None, 7, 7, 12]
             self._conv = tf.layers.conv2d(
-                inputs=self._input_reshaped,
+                inputs=self._input,
                 filters=12,
-                kernel_size=[3, 3],
+                kernel_size=[7, 7],
                 strides=(1, 1),
                 padding="same",
                 kernel_initializer=conv_kernel_initializer,
@@ -145,6 +145,35 @@ class PGPolicy3x3CNN(Policy):
         e_x = np.exp(x - np.max(x))
         return e_x / e_x.sum()
 
+    def get_action_probs_input_channel(self, board_state,tesnsor_state, normalize_with_softmax=False):
+        #edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
+        action_probs = self._sess.run([self._action_probs], feed_dict={
+            self._input: tesnsor_state,
+            self._keep_prob: 1.0
+        })
+        # convert to ndarray
+        action_probs = action_probs[0][0]
+
+        zero_indices = []  # indices of legal actions
+        for i in range(len(board_state)):
+            if board_state[i] == 0:
+                zero_indices.append(i)
+
+        legal_raw_probs = []
+        for z in zero_indices:
+            legal_raw_probs.append(action_probs[z])
+        if normalize_with_softmax:
+            legal_normalized_probs = self._softmax(legal_raw_probs)
+        else:
+            legal_normalized_probs = self._normalize(legal_raw_probs)
+
+        action_prob_map = {}
+        for i in range(len(zero_indices)):
+            action_state = [x for x in board_state]
+            action_state[zero_indices[i]] = 1
+            action_prob_map[as_string(action_state)] = legal_normalized_probs[i]
+        return action_prob_map
+
     def get_action_probs(self, board_state, normalize_with_softmax=False):
         edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
         action_probs = self._sess.run([self._action_probs], feed_dict={
@@ -207,7 +236,9 @@ class PGPolicy3x3CNN(Policy):
         batches = list(self._minibatches(transitions, batch_size=self._batch_size))
         for b in range(len(batches)):
             batch = batches[b]
-            states = [convert_board_state_to_edge_matrix(self._board_size, row[0]) for row in batch]
+            #states = [convert_board_state_to_edge_matrix(self._board_size, row[0]) for row in batch]
+            states = [row[0] for row in batch]
+            states = np.concatenate(states,axis=0)
             actions = [row[1] for row in batch]
             outcomes = [[row[2]] for row in batch]
             self._sess.run([self._train_op], {

@@ -35,13 +35,14 @@ def duel(board_size, p1, p2,antip1=None,antip2=None):
             players = [player, (1 - player)]
             if edge_index % 2 == 0:
                 players = [x for x in reversed(players)]
-            game = Game(board_size, players)
+            game = Game_With_Box(board_size, players)
             current_player = game.get_current_player()
             # select the first edge for the first player
             board_state = game.get_board_state()
             current_player, _ = game.select_edge(edge_index, current_player)
             while not game.is_finished():
-                board_state = game.get_board_state()
+                #board_state = game.get_board_state()
+                state_tensor = np.concatenate(game.get_tensor_representation(current_player), axis=3)
                 if current_player == 0:
                     if not antip1:
                         edge = p1.select_edge(board_state)

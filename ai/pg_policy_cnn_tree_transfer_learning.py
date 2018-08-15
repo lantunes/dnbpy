@@ -1,0 +1,142 @@
+
+import sys
+sys.path.append("/Users/u6042446/Desktop/LuisRL/dnbpy/")
+from ai import *
+from dnbpy import *
+from util.helper_functions import *
+from util.file_helper import *
+from util.reward_util import *
+from util.rate_util import *
+from util.evaluator import *
+from pg_policy_cnn_tree import  PGPolicyCNN2Tree
+from Tree_cnn import  *
+
+
+board_size = (3, 3)
+num_episodes = 1
+learning_rate = 0.005
+min_learning_rate = 0.000001
+temperature = 1.0
+min_temperature = 0.3
+batch_size = 1
+decay_speed = 1.0
+#base_path = get_base_path_arg()
+
+print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
+
+
+#Test for (4,4)
+board_size = (5,5)
+policy = PGPolicyCNN2Tree(board_size, batch_size=batch_size)
+#For test
+#game = Game(board_size, [0,1])
+
+unique_states_visited = set()
+all_transitions = []
+for episode_num in range(1, num_episodes + 1):
+    tmp = gen_rate_exponential(episode_num, temperature, min_temperature, num_episodes, decay_speed)
+    lr = gen_rate_exponential(episode_num, learning_rate, min_learning_rate, num_episodes, decay_speed)
+    policy.set_boltzmann_action(True)
+    policy.set_temperature(tmp)
+    policy.set_learning_rate(lr)
+    players = [0, 1]
+    game = Game(board_size, players)
+    current_player = game.get_current_player()
+
+    p0_actions = []
+    p1_actions = []
+    p0_states = []
+    p1_states = []
+
+    while not game.is_finished():
+        board_state = game.get_board_state()
+        print(board_state)
+        edge = policy.select_edge(board_state)
+        sys.exit(1)
+        if current_player == 0:
+            p0_states.append(board_state)
+            edge = policy.select_edge(board_state)
+            p0_actions.append(to_one_hot_action(board_state, edge))
+            current_player, _ = game.select_edge(edge, 0)
+            unique_states_visited.add(as_string(game.get_board_state()))
+        else:
+            p1_states.append(board_state)
+            edge = policy.select_edge(board_state)
+            p1_actions.append(to_one_hot_action(board_state, edge))
+            current_player, _ = game.select_edge(edge, 1)
+            unique_states_visited.add(as_string(game.get_board_state()))
+
+sys.exit(1)
+reward_fn = DelayedBinaryReward()
+
+print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='self-play', reward=reward_fn,
+           updates='offline', learning_rate=learning_rate, min_learning_rate=min_learning_rate, temperature=temperature,
+           min_temperature=min_temperature, architecture=policy.get_architecture(), batch_size=batch_size,
+           decay_speed=decay_speed)
+
+
+def append_transitions(states, actions, outcomes, all_transitions):
+    for i, _ in enumerate(actions):
+        state = states[i]
+        action = actions[i]
+        reward = outcomes[i]
+        all_transitions.append([state, action, reward])
+
+unique_states_visited = set()
+all_transitions = []
+for episode_num in range(1, num_episodes + 1):
+    tmp = gen_rate_exponential(episode_num, temperature, min_temperature, num_episodes, decay_speed)
+    lr = gen_rate_exponential(episode_num, learning_rate, min_learning_rate, num_episodes, decay_speed)
+    policy.set_boltzmann_action(True)
+    policy.set_temperature(tmp)
+    policy.set_learning_rate(lr)
+    players = [0, 1]
+    game = Game(board_size, players)
+    current_player = game.get_current_player()
+
+    p0_actions = []
+    p1_actions = []
+    p0_states = []
+    p1_states = []
+
+    while not game.is_finished():
+        board_state = game.get_board_state()
+        if current_player == 0:
+            p0_states.append(board_state)
+            edge = policy.select_edge(board_state)
+            p0_actions.append(to_one_hot_action(board_state, edge))
+            current_player, _ = game.select_edge(edge, 0)
+            unique_states_visited.add(as_string(game.get_board_state()))
+        else:
+            p1_states.append(board_state)
+            edge = policy.select_edge(board_state)
+            p1_actions.append(to_one_hot_action(board_state, edge))
+            current_player, _ = game.select_edge(edge, 1)
+            unique_states_visited.add(as_string(game.get_board_state()))
+
+    p0_reward = reward_fn.compute_reward(game, 0, 1)
+    p1_reward = reward_fn.compute_reward(game, 1, 0)
+
+    # don't add transitions that have 0 reward as the gradient will be zero anyways
+    if p0_reward == 1:
+        p0_outcomes = len(p0_actions)*[p0_reward]
+        append_transitions(p0_states, p0_actions, p0_outcomes, all_transitions)
+    elif p1_reward == 1:
+        p1_outcomes = len(p1_actions)*[p1_reward]
+        append_transitions(p1_states, p1_actions, p1_outcomes, all_transitions)
+
+    if episode_num % 100 == 0:
+        policy.update_model(all_transitions)
+        all_transitions = []
+
+    # analyze results
+    if episode_num % 1000 == 0:
+        # play against opponents
+        policy.set_boltzmann_action(False)
+        opponents = [RandomPolicy(), Level1HeuristicPolicy(board_size), Level2HeuristicPolicy(board_size)]
+        results = evaluate(policy, board_size, 1000, opponents)
+        print("%s, %s, %s, %s, %s, %s, %s, %s" % (episode_num, results[RandomPolicy.__name__]['won'],
+                                                  results[Level1HeuristicPolicy.__name__]['won'],
+                                                  results[Level2HeuristicPolicy.__name__]['won'],
+                                                  results, len(unique_states_visited), tmp, lr))
+        WeightWriter.print_episode(base_path, episode_num, policy.print_params)
