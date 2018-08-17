@@ -3,7 +3,7 @@ from threading import Thread
 from dnbpy import *
 
 
-def evaluate(policy, board_size, num_trials, opponents):
+def evaluate(policy, board_size, num_trials, opponents,num_input_channels):
     final_results = {}
     for opponent_policy in opponents:
         results = {'won': 0, 'lost': 0, 'tied': 0}
@@ -11,7 +11,7 @@ def evaluate(policy, board_size, num_trials, opponents):
             players = ['policy', 'opponent']
             if trial % 2 == 0:
                 players = [x for x in reversed(players)]
-            game = Game(board_size, players)
+            game = Game_With_Box(board_size, players)
             current_player = game.get_current_player()
             while not game.is_finished():
                 board_state = game.get_board_state()
@@ -19,7 +19,8 @@ def evaluate(policy, board_size, num_trials, opponents):
                     edge = opponent_policy.select_edge(board_state)
                     current_player, _ = game.select_edge(edge, 'opponent')
                 else:
-                    edge = policy.select_edge(board_state)
+                    tensor = game.get_tensor_representation(current_player,num_input_channels)
+                    edge = policy.select_edge(board_state,tensor)
                     current_player, _ = game.select_edge(edge, 'policy')
             policy_score = game.get_score('policy')
             opponent_score = game.get_score('opponent')

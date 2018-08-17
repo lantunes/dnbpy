@@ -10,7 +10,7 @@ class Level2HeuristicPolicy(Policy):
     def __init__(self, board_size):
         self._board_size = board_size
 
-    def select_edge(self, board_state):
+    def select_edge(self, board_state, tensor_state=None):
         selected_edge = self.select_edge_completing_box(board_state)
         if selected_edge != -1:
             return selected_edge
@@ -59,7 +59,7 @@ class Level2HeuristicPolicy(Policy):
         r_index = 0
         for r in range(rows):
             for c in range(cols):
-                boxes.append(Box(r_index, r_index + cols, r_index + cols + 1, 2*cols + 1 + r_index))
+                boxes.append(Box(r_index, r_index + cols, r_index + cols + 1, 2*cols + 1 + r_index,r,c))
                 r_index += 1
             r_index += cols + 1
         return boxes

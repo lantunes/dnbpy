@@ -134,12 +134,22 @@ class Game_With_Box:
     def get_edge_matrix(self):
         return np.array(self._edge_matrix)
 
-    def get_tensor_representation(self,current_player):
+    def get_tensor_representation(self,current_player,num_channels):
+
         out_tensor = []
-        reshaped_edge_matrix = np.reshape(self.get_edge_matrix(),(1,)+np.shape(self.get_edge_matrix())+(1,))
-        out_tensor.append(reshaped_edge_matrix)
-        reshaped_box_matrix = np.reshape(np.array(self._box_matrix[current_player]),(1,)+np.shape(np.array(self._box_matrix[current_player]))+(1,))
-        out_tensor.append(reshaped_box_matrix)
+        #reshaped_edge_matrix = np.reshape(self.get_edge_matrix(),(1,)+np.shape(self.get_edge_matrix())+(1,))
+        out_tensor.append(self.get_edge_matrix())
+        #reshaped_box_matrix = np.reshape(np.array(self._box_matrix[current_player]),(1,)+np.shape(np.array(self._box_matrix[current_player]))+(1,))
+        if num_channels==2:
+            out_tensor.append(np.array(self._box_matrix[current_player]))
+        elif num_channels==4:
+            out_tensor.append(np.array(self._box_matrix[current_player]))
+            if current_player==self._players[0]:
+               out_tensor.append(np.array(self._box_matrix[self._players[1]]))
+            else:
+               out_tensor.append(np.array(self._box_matrix[self._players[0]]))
+            shape = np.shape(self.get_edge_matrix())
+            out_tensor.append(np.ones([shape[0],shape[1]])*self._current_player)
         return (out_tensor)
 
 

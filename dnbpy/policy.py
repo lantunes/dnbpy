@@ -7,7 +7,7 @@ class Policy:
 
 
 class RandomPolicy(Policy):
-    def select_edge(self, board_state):
+    def select_edge(self, board_state,tensor_state=None):
         zero_indices = []
         for i in range(len(board_state)):
             if board_state[i] == 0:

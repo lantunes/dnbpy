@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/Users/u6042446/Desktop/LuisRL/dnbpy/")
+sys.path.append("/Users/u6042446/Desktop/dnbpy/")
 from ai import *
 from dnbpy import *
 from util.helper_functions import *
@@ -23,12 +23,12 @@ dropout_keep_prob = 1.0
 use_symmetries = True
 normalize_action_probs_with_softmax = False
 #base_path = get_base_path_arg()
-base_path = "/Users/u6042446/Desktop/LuisRL/dnbpy"
+base_path = "/Users/u6042446/Desktop/dnbpy"
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-policy = PGPolicy3x3CNN(board_size, n_channels=2,batch_size=batch_size, dropout_keep_prob=dropout_keep_prob)
-anti_policy = PGPolicy3x3CNN(board_size, n_channels=2,batch_size=batch_size, dropout_keep_prob=dropout_keep_prob)
+policy = PGPolicy3x3CNN(board_size, n_channels=1,batch_size=batch_size, dropout_keep_prob=dropout_keep_prob)
+anti_policy = PGPolicy3x3CNN(board_size, n_channels=1,batch_size=batch_size, dropout_keep_prob=dropout_keep_prob)
 policy.set_boltzmann_action(False)
 anti_policy.set_boltzmann_action(False)
 opponent = policy.copy()
@@ -137,23 +137,22 @@ for episode_num in range(1, num_episodes + 1):
         board_state = game.get_board_state()
         if current_player == 'policy':
 
+            tensor = game.get_tensor_representation(current_player)
 
-            state_tensor = np.concatenate(game.get_tensor_representation(current_player),axis=3)
-            policy_states.append(state_tensor)
+            policy_states.append(tensor)
             #edge = select_edge_with_anti(policy, anti_policy, board_state, epsilon)
-            edge = select_edge_with_anti(policy,anti_policy,board_state,epsilon,state_tensor)
+            edge = select_edge_with_anti(policy,anti_policy,board_state,epsilon,tensor)
             policy_actions.append(to_one_hot_action(board_state, edge))
-
             current_player, _ = game.select_edge(edge, current_player)
             unique_states_visited.add(as_string(game.get_board_state()))
 
 
         else:
 
-            state_tensor = np.concatenate(game.get_tensor_representation(current_player), axis=3)
-            opponent_states.append(state_tensor)
+            tensor = game.get_tensor_representation(current_player)
+            opponent_states.append(tensor)
             #edge = select_edge_with_anti(opponent, anti_opponent, board_state, epsilon)
-            edge = select_edge_with_anti(opponent,anti_opponent,board_state,epsilon,state_tensor)
+            edge = select_edge_with_anti(opponent,anti_opponent,board_state,epsilon,tensor)
             opponent_actions.append(to_one_hot_action(board_state, edge))
 
             current_player, _ = game.select_edge(edge, current_player)
@@ -161,6 +160,7 @@ for episode_num in range(1, num_episodes + 1):
 
     policy_reward = reward_fn.compute_reward(game, 'policy', 'opponent')
     opponent_reward = reward_fn.compute_reward(game, 'opponent', 'policy')
+
 
     if policy_reward == 1:
         policy_outcomes = len(policy_actions)*[policy_reward]
@@ -173,8 +173,7 @@ for episode_num in range(1, num_episodes + 1):
         policy_outcomes = len(policy_actions)*[opponent_reward]
         append_transitions(policy_states, policy_actions, policy_outcomes, all_anti_transitions, use_symmetries, board_size)
 
-
-
+    #if episode_num==10: sys.exit(0)
     if episode_num % num_episodes_per_update == 0:
         policy.update_model(all_transitions)
         anti_policy.update_model(all_anti_transitions)

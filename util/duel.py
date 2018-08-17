@@ -20,7 +20,7 @@ def get_best_action(board_state,policy_action_map,anti_policy_action_map):
     return get_selected_index([int(i) for i in best_state], board_state)
 
 
-def duel(board_size, p1, p2,antip1=None,antip2=None):
+def duel(board_size, p1, p2,num_input_channels,antip1=None,antip2=None):
     """
     :param board_size: the game's board size 
     :param p1: the first player
@@ -39,27 +39,29 @@ def duel(board_size, p1, p2,antip1=None,antip2=None):
             current_player = game.get_current_player()
             # select the first edge for the first player
             board_state = game.get_board_state()
+            tensor = game.get_tensor_representation(current_player,num_input_channels)
+
             current_player, _ = game.select_edge(edge_index, current_player)
             while not game.is_finished():
-                #board_state = game.get_board_state()
-                state_tensor = np.concatenate(game.get_tensor_representation(current_player), axis=3)
+                board_state = game.get_board_state()
+                tensor = game.get_tensor_representation(current_player,num_input_channels)
                 if current_player == 0:
                     if not antip1:
-                        edge = p1.select_edge(board_state)
-                    else:
-                        policy_action_prob = p1.get_action_probs(board_state)
-                        anti_policy_action_prob = antip1.get_action_probs(board_state)
-                        edge = get_best_action(board_state,policy_action_prob,anti_policy_action_prob)
+                        edge = p1.select_edge(board_state,tensor)
+                    #else:
+                     #   policy_action_prob = p1.get_action_probs(board_state)
+                      #  anti_policy_action_prob = antip1.get_action_probs(board_state)
+                       # edge = get_best_action(board_state,policy_action_prob,anti_policy_action_prob)
                     #edge = p1.select_edge(board_state)
 
                     current_player, _ = game.select_edge(edge, current_player)
                 else:
                     if not antip2:
-                        edge = p2.select_edge(board_state)
-                    else:
-                        policy_action_prob = p2.get_action_probs(board_state)
-                        anti_policy_action_prob = antip2.get_action_probs(board_state)
-                        edge = get_best_action(board_state, policy_action_prob, anti_policy_action_prob)
+                        edge = p2.select_edge(board_state,tensor)
+                    #else:
+                     #   policy_action_prob = p2.get_action_probs(board_state)
+                      #  anti_policy_action_prob = antip2.get_action_probs(board_state)
+                       # edge = get_best_action(board_state, policy_action_prob, anti_policy_action_prob)
                     #edge = p2.select_edge(board_state)
                     current_player, _ = game.select_edge(edge, current_player)
             p1_score = game.get_score(0)

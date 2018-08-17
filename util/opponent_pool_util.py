@@ -16,3 +16,11 @@ class OpponentPool:
             return RandomPolicy()
         else:
             return random.choice(self._opponent_pool)
+
+    def sample_opponent_sep(self, epsilon=0.0):
+        if random.random() < epsilon:
+            return RandomPolicy()
+        else:
+            tuple1 = random.choice(self._opponent_pool)
+            tuple2 = random.choice(self._opponent_pool)
+            return (tuple1[0],tuple2[1])

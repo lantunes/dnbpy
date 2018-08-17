@@ -7,3 +7,4 @@ from .initializer_util import *
 from .opponent_pool_util import *
 from .evaluator import *
 from .duel import *
+from .conf import *
