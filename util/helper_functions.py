@@ -71,9 +71,9 @@ def to_one_hot_action(board_state, edge_index):
     return action_vector
 
 
-def to_state_action_pair_symmetries(board_size, state, action):
-    state_edge_matrix = convert_board_state_to_edge_matrix(board_size, state)
-    action_edge_matrix = convert_board_state_to_edge_matrix(board_size, action)
+def to_state_action_pair_symmetries(board_size, state, action, edge_length=1, include_dots=True):
+    state_edge_matrix = convert_board_state_to_edge_matrix(board_size, state, edge_length, include_dots)
+    action_edge_matrix = convert_board_state_to_edge_matrix(board_size, action, edge_length, include_dots)
     # I symmetry
     state_i = np.array(state_edge_matrix)
     action_i = np.array(action_edge_matrix)
@@ -136,18 +136,20 @@ def to_state_action_pair_symmetries(board_size, state, action):
     symmetries = []
     for sym in all_possible:
         if not contains(symmetries, sym):
-            symmetries.append([convert_edge_matrix_to_board_state(sym[0]), convert_edge_matrix_to_board_state(sym[1])])
+            symmetries.append([convert_edge_matrix_to_board_state(sym[0], edge_length),
+                               convert_edge_matrix_to_board_state(sym[1], edge_length)])
 
     return symmetries
 
 
-def append_transitions(states, actions, outcomes, all_transitions, use_symmetries, board_size):
+def append_transitions(states, actions, outcomes, all_transitions, use_symmetries, board_size,
+                       edge_length=1, include_dots=True):
     for i, _ in enumerate(actions):
         state = states[i]
         action = actions[i]
         reward = outcomes[i]
         if use_symmetries:
-            state_action_symmetries = to_state_action_pair_symmetries(board_size, state, action)
+            state_action_symmetries = to_state_action_pair_symmetries(board_size, state, action, edge_length, include_dots)
             for symmetry in state_action_symmetries:
                 all_transitions.append([symmetry[0], symmetry[1], reward])
         else:

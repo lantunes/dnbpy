@@ -5,6 +5,68 @@ import dnbpy
 
 class TestEdgeMatrixToBoardState(unittest.TestCase):
 
+    def test_convert_edge_matrix_to_board_state_2x2(self):
+        self.assertEqual(dnbpy.convert_edge_matrix_to_board_state([[1, 0, 1, 0, 1],
+                                                                   [0, 0, 0, 0, 0],
+                                                                   [1, 0, 1, 0, 1],
+                                                                   [0, 0, 0, 0, 0],
+                                                                   [1, 0, 1, 0, 1]]),
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+    def test_convert_edge_matrix_to_board_state_2x2_include_dots(self):
+        self.assertEqual(dnbpy.convert_edge_matrix_to_board_state([[0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0]]),
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+        self.assertEqual(dnbpy.convert_edge_matrix_to_board_state([[0, 0, 1, 0, 0],
+                                                                   [0, 0, 1, 0, 0],
+                                                                   [0, 0, 1, 0, 0],
+                                                                   [0, 0, 0, 0, 0],
+                                                                   [0, 0, 1, 1, 1]]),
+                         [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1])
+
+    def test_convert_edge_matrix_to_board_state_2x2_edge_length(self):
+        self.assertEqual(dnbpy.convert_edge_matrix_to_board_state([[1, 0, 0, 1, 0, 0, 1],
+                                                                   [0, 0, 0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0, 0, 0],
+                                                                   [1, 0, 0, 1, 0, 0, 1],
+                                                                   [0, 0, 0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0, 0, 0],
+                                                                   [1, 0, 0, 1, 0, 0, 1]], edge_length=2),
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+        self.assertEqual(dnbpy.convert_edge_matrix_to_board_state([[1, 1, 1, 1, 0, 0, 1],
+                                                                   [0, 0, 0, 1, 0, 0, 0],
+                                                                   [0, 0, 0, 1, 0, 0, 0],
+                                                                   [1, 0, 0, 1, 0, 0, 1],
+                                                                   [0, 0, 0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0, 0, 0],
+                                                                   [1, 0, 0, 1, 1, 1, 1]], edge_length=2),
+                         [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1])
+
+    def test_convert_edge_matrix_to_board_state_2x2_edge_length_include_dots(self):
+        self.assertEqual(dnbpy.convert_edge_matrix_to_board_state([[0, 0, 0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0, 0, 0]], edge_length=2),
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+        self.assertEqual(dnbpy.convert_edge_matrix_to_board_state([[1, 1, 1, 1, 0, 0, 0],
+                                                                   [0, 0, 0, 1, 0, 0, 0],
+                                                                   [0, 0, 0, 1, 0, 0, 0],
+                                                                   [0, 0, 0, 1, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 0, 0, 0, 0],
+                                                                   [0, 0, 0, 1, 1, 1, 1]], edge_length=2),
+                         [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1])
+
+
     def test_convert_edge_matrix_to_board_state_3x3(self):
         self.assertEqual(dnbpy.convert_edge_matrix_to_board_state([[1, 0, 1, 0, 1, 0, 1],
                                                                    [0, 0, 0, 0, 0, 0, 0],

@@ -14,7 +14,10 @@ class PGPolicy3x3CNN(Policy):
         self._dropout_keep_prob = dropout_keep_prob
         self._activation = activation
 
-        edge_matrix = init_edge_matrix(board_size)
+        self._edge_length = 1
+        self._include_dots = True
+
+        edge_matrix = init_edge_matrix(board_size, edge_length=self._edge_length, include_dots=self._include_dots)
         self._n_input_rows = edge_matrix.shape[0]
         self._n_input_cols = edge_matrix.shape[1]
         self._n_hidden = 500
@@ -103,7 +106,8 @@ class PGPolicy3x3CNN(Policy):
                (self._activation.__name__, self._activation.__name__)
 
     def select_edge(self, board_state):
-        edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
+        edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state,
+                                                         edge_length=self._edge_length, include_dots=self._include_dots)
         action_probs = self._sess.run([self._action_probs], feed_dict={
             self._input: [edge_matrix],
             self._keep_prob: 1.0
@@ -145,7 +149,8 @@ class PGPolicy3x3CNN(Policy):
         return e_x / e_x.sum()
 
     def get_action_probs(self, board_state, normalize_with_softmax=False):
-        edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state)
+        edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state,
+                                                         edge_length=self._edge_length, include_dots=self._include_dots)
         action_probs = self._sess.run([self._action_probs], feed_dict={
             self._input: [edge_matrix],
             self._keep_prob: 1.0
@@ -206,7 +211,8 @@ class PGPolicy3x3CNN(Policy):
         batches = list(self._minibatches(transitions, batch_size=self._batch_size))
         for b in range(len(batches)):
             batch = batches[b]
-            states = [convert_board_state_to_edge_matrix(self._board_size, row[0]) for row in batch]
+            states = [convert_board_state_to_edge_matrix(self._board_size, row[0], edge_length=self._edge_length,
+                                                         include_dots=self._include_dots) for row in batch]
             actions = [row[1] for row in batch]
             outcomes = [[row[2]] for row in batch]
             self._sess.run([self._train_op], {
@@ -240,7 +246,7 @@ class PGPolicy3x3CNN(Policy):
         return params_map
 
     def copy(self):
-        policy_copy = type(self)(self._board_size, self._batch_size, self.get_params())
+        policy_copy = type(self)(self._board_size, self._batch_size, self.get_params(), self._dropout_keep_prob, self._activation)
         policy_copy.set_temperature(self.get_temperature())
         policy_copy.set_epsilon(self.get_epsilon())
         policy_copy.set_boltzmann_action(self.is_boltzmann_action())

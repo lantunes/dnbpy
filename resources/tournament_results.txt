@@ -203,3 +203,72 @@ MCTSPolicy2 (100000)|          |          |
 * after 100 games, alternating going first
 * MCTSPolicy2 ([num simulations])
 * MCTS selection policy: [most visited node] / [highest average wins]
+
+===========================
+
+MCTS+NN (# simulations in parentheses) win rate vs NN:
+--------------------------------------------------------------------
+3x3              |   NN                           |  L2            |
+--------------------------------------------------------------------
+MCTS+NN (100)    |  27% (367 games, ~6 sec./game) |                |
+MCTS+NN (500)    |  48% (90 games, ~30 sec./game) |                |
+MCTS+NN (1000)   |  58% (90 games, ~55 sec./game) | 44% (50 games) |
+MCTS+NN (1500)   |  62% (65 games, ~85 sec./game) |                |
+MCTS+NN (2500)   |  59% (90 games, ~130 sec./game)|                |
+MCTS+NN (5000)   |  80% (46 games, ~300 sec./game)| 58% (12 games) |
+--------------------------------------------------------------------
+NN = PGPolicy3x3CNN(dnbpy38-3x3-relu-351000.txt, activation=tf.nn.relu)
+MCTS+NN = MCTSPolicy2(default_policy=NN)
+
+TODO have duels between L2 and MCTS+NN and NN
+duel: MCTS+NN (100 simulations) vs. NN: NN wins 33-15 (~31% win rate for MCTS+NN)
+duel: MCTS+NN (500 simulations) vs. NN: NN wins 28-20 (~42% win rate for MCTS+NN)
+duel: L2 vs. NN: NN wins 42-6 (87.5% win rate for NN)
+
+MCTS+NN (1000 simulations) vs. dotsandboxes.org 3x3:
+policy goes first: 1-8 [loss]
+policy goes second: 5-4 [win]
+
+MCTS+NN (1500 simulations) vs. dotsandboxes.org 3x3:
+policy goes first: 3-6 [loss]
+policy goes second: 3-6 [loss]
+
+MCTS+NN (2500 simulations) vs. dotsandboxes.org 3x3:
+policy goes first: 9-0 [loss]
+policy goes second: 4-5 [loss]
+
+MCTS+NN (5000 simulations) vs. dotsandboxes.org 3x3:
+policy goes first: 1-8 [loss]
+policy goes second: 2-7 [loss]
+
+
+MCTS-N (w, # simulations in parentheses) win rate vs NN:
+-----------------------------------------------------------------------
+3x3                 |   NN                           |  L2            |
+-----------------------------------------------------------------------
+MCTS-N (1, 1000)    |  12% (77 games, ~12 sec./game) | 24% (75 games) |
+MCTS-N (10, 1000)   |  24% (82 games, ~12 sec./game) | 47% (121 games)|
+MCTS-N (50, 1000)   |  54% (100 games, ~10 sec./game)| 79% (100 games)|
+MCTS-N (100, 1000)  |  70% (100 games, ~12 sec./game)| 88% (100 games)|
+MCTS-N (500, 1000)  |  65% (124 games, ~15 sec/game) | 87% (116 games)|
+-----------------------------------------------------------------------
+MCTS-N (100, 5000)  |  54% (100 games, ~70 sec./game)| 83% (100 games)|
+MCTS-N (500, 5000)  |  55% (100 games, ~77 sec./game)| 92% (100 games)|
+MCTS-N (1000, 5000) |  88% (100 games, ~70 sec./game)| 92% (100 games)|
+-----------------------------------------------------------------------
+NN = PGPolicy3x3CNN(dnbpy38-3x3-relu-351000.txt, activation=tf.nn.relu)
+MCTS-N = MCTSPolicyNetPolicy, with policy = NN
+
+duel: MCTS-N (w=100, n=1000) vs. NN: MCTS-N wins 32-16 (~67% win rate for MCTS-N)
+duel: MCTS-N (w=120, n=1000) vs. NN: MCTS-N wins 27-21 (~56% win rate for MCTS-N)
+duel: MCTS-N (w=500, n=5000) vs. NN: MCTS-N wins 28-20 (~58% win rate for MCTS-N)
+duel: MCTS-N (w=1000, n=5000) vs. NN: MCTS-N wins 36-12 (75% win rate for MCTS-N)
+duel: MCTS-N (w=100, n=1000) vs. NN: NN wins 35-13 (~27% win rate for MCTS-N) *normalize_with_softmax=True
+
+MCTS-N (w=1000, 5000 simulations) vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 4-5 [loss]
+
+MCTS-N (w=100, 1000 simulations) vs. dotsandboxes.org 3x3:
+policy goes first: 3-6 [loss]
+policy goes second: 6-3 [win]

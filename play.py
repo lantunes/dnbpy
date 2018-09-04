@@ -32,22 +32,41 @@ def main():
 
     print("preparing game...")
 
-    td0 = ai.TDZeroPolicy((board_rows, board_cols), learning_rate=0.0, gamma=0.0,
-                          table_file_path='resources/td0_2x2_0.28_0.01_0.99_immediate_reward.txt')
-
-    td1 = ai.TDOneTabularPolicy((board_rows, board_cols), learning_rate=0.0, gamma=0.0,
-                                table_file_path='resources/td1_2x2_0.6_1.0_0.99_delayed_selfplay100k.txt')
-
     L1 = ai.Level1HeuristicPolicy((board_rows, board_cols))
-
     L2 = ai.Level2HeuristicPolicy((board_rows, board_cols))
 
-    pg_params = read_params('resources/pg_2x2_cnn2_tanh_mcts_exit_03-episode-912000.txt')
-    pg_model = ai.PGPolicyCNN2((board_rows, board_cols), existing_params=pg_params, activation=tf.nn.tanh)
-    pg_model.set_boltzmann_action(False)
-    pg_model.set_epsilon(0.0)
+    if board_rows == 2 and board_cols == 2:
+        td0 = ai.TDZeroPolicy((board_rows, board_cols), learning_rate=0.0, gamma=0.0,
+                              table_file_path='resources/td0_2x2_0.28_0.01_0.99_immediate_reward.txt')
 
-    MCTS_PG = ai.MCTSPolicyNetPolicyCpuct((board_rows, board_cols), num_playouts=10000, cpuct=5)
+        td1 = ai.TDOneTabularPolicy((board_rows, board_cols), learning_rate=0.0, gamma=0.0,
+                                    table_file_path='resources/td1_2x2_0.6_1.0_0.99_delayed_selfplay100k.txt')
+
+        # pg_params = read_params('resources/pg_2x2_cnn2_tanh_mcts_exit_03-episode-912000.txt')
+        pg_params = read_params('resources/pg_2x2_cnn2_tanh_dnbpy29-episode-427000.txt')
+        pg_model = ai.PGPolicyCNN2((board_rows, board_cols), existing_params=pg_params, activation=tf.nn.tanh)
+        pg_model.set_boltzmann_action(False)
+        pg_model.set_epsilon(0.0)
+
+        # MCTS_PG = ai.MCTSPolicyNetPolicyCpuct((board_rows, board_cols), num_playouts=1000, cpuct=5, default_policy=pg_model)
+        MCTS_PG = ai.MCTSPolicy2((board_rows, board_cols), num_playouts=10000, default_policy=pg_model)
+    else:
+        td0 = None
+        td1 = None
+        pg_model = None
+        MCTS_PG = None
+
+    if board_rows == 3 and board_cols == 3:
+        pg_params2 = read_params('resources/dnbpy38-3x3-relu-351000.txt')
+        OPP = ai.PGPolicy3x3CNN((board_rows, board_cols), existing_params=pg_params2, activation=tf.nn.relu)
+        OPP.set_boltzmann_action(False)
+        OPP.set_epsilon(0.0)
+
+        # MCTS_PG2 = ai.MCTSPolicy2((board_rows, board_cols), num_playouts=1000, default_policy=OPP)
+        MCTS_PG2 = ai.MCTSPolicyNetPolicy((board_rows, board_cols), num_playouts=1000, w=100)
+    else:
+        OPP = None
+        MCTS_PG2 = None
 
     game = dnbpy.Game((board_rows, board_cols), players)
     print(game)
@@ -79,7 +98,16 @@ def main():
             current_player, _ = game.select_edge(move, current_player)
             print("computer player selects edge %s" % move)
         elif current_player == "$MCTS-PG":
-            move = MCTS_PG.select_edge(game.get_board_state(), game.get_score(current_player), pg_model)
+            # move = MCTS_PG.select_edge(game.get_board_state(), game.get_score(current_player), pg_model)
+            move = MCTS_PG.select_edge(game.get_board_state(), game.get_score(current_player))
+            current_player, _ = game.select_edge(move, current_player)
+            print("computer player selects edge %s" % move)
+        elif current_player == "$OPP":
+            move = OPP.select_edge(game.get_board_state())
+            current_player, _ = game.select_edge(move, current_player)
+            print("computer player selects edge %s" % move)
+        elif current_player == "$MCTS-PG2":
+            move = MCTS_PG2.select_edge(game.get_board_state(), game.get_score(current_player), OPP)
             current_player, _ = game.select_edge(move, current_player)
             print("computer player selects edge %s" % move)
         else:

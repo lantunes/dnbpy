@@ -289,7 +289,7 @@ class PGPolicyCNN4(Policy):
         return params_map
 
     def copy(self):
-        policy_copy = type(self)(self._board_size, self._batch_size, self.get_params())
+        policy_copy = type(self)(self._board_size, self._batch_size, self.get_params(), self._dropout_keep_prob, self._activation)
         policy_copy.set_temperature(self.get_temperature())
         policy_copy.set_epsilon(self.get_epsilon())
         policy_copy.set_boltzmann_action(self.is_boltzmann_action())

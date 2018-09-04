@@ -10,7 +10,7 @@ from util.opponent_pool_util import *
 board_size = (3, 3)
 num_episodes = 1000000
 learning_rate_schedule = {0: 0.005}
-epsilon_schedule = {0: 0.1, 300000: 0.35}
+epsilon_schedule = {0: 0.1}
 batch_size = 32
 decay_speed = 1.0
 opponent_pool_max_size = 100
@@ -31,7 +31,7 @@ L0 = RandomPolicy()
 reward_fn = DelayedBinaryReward()
 opponent_pool = OpponentPool(max_size=opponent_pool_max_size)
 
-opponent_schedule = {0: L0, 100000: L1, 200000: L2, 300000: 'policy'}
+opponent_schedule = {0: L0, 100000: L1, 200000: L2}
 
 print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='vs opponents then self-play pool',
            reward=reward_fn, updates='offline', learning_rate_schedule=learning_rate_schedule, epsilon_schedule=epsilon_schedule,

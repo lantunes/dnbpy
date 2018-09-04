@@ -7,7 +7,7 @@ from util.rate_util import *
 from util.evaluator import *
 import concurrent.futures
 
-board_size = (2, 2)
+board_size = (3, 3)
 num_episodes = 1000000
 learning_rate = 0.005
 min_learning_rate = 0.005
@@ -21,15 +21,17 @@ num_episodes_per_policy_update = 100
 # episodes_per_thread = [14, 14, 14, 14, 14, 15, 15]  # 8 cores
 # episodes_per_thread = [6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]  # 16 cores
 episodes_per_thread = [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2]  # 36 cores
-mcts_simulations = 100
+mcts_simulations = 500
 mcts_c = 5
 normalize_policy_probs_with_softmax = True
 activation = tf.nn.tanh
 base_path = get_base_path_arg()
+edge_length = 1
+include_dots = True
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-curr_policy = PGPolicyCNN2(board_size, batch_size=batch_size, activation=activation)
+curr_policy = PGPolicy3x3CNN(board_size, batch_size=batch_size, activation=activation)
 curr_policy.set_boltzmann_action(False)
 curr_policy.set_epsilon(0.0)
 mcts_player = MCTSPolicyNetPolicyCpuct(board_size, num_playouts=mcts_simulations, cpuct=mcts_c,
@@ -48,7 +50,7 @@ current_episode_num = 0
 
 
 def run_episodes(num_episodes_per_thread, existing_params):
-    pol = PGPolicyCNN2(board_size, batch_size=batch_size, existing_params=existing_params, activation=activation)
+    pol = PGPolicy3x3CNN(board_size, batch_size=batch_size, existing_params=existing_params, activation=activation)
     run_transitions = []
     for episode_num in range(1, num_episodes_per_thread + 1):
         players = [0, 1] if episode_num % 2 == 0 else [1, 0]
@@ -83,10 +85,10 @@ def run_episodes(num_episodes_per_thread, existing_params):
         # don't add transitions that have 0 reward as the gradient will be zero anyways
         if p0_reward == 1:
             p0_outcomes = len(p0_actions)*[p0_reward]
-            append_transitions(p0_states, p0_actions, p0_outcomes, run_transitions, use_symmetries, board_size)
+            append_transitions(p0_states, p0_actions, p0_outcomes, run_transitions, use_symmetries, board_size, edge_length, include_dots)
         elif p1_reward == 1:
             p1_outcomes = len(p1_actions)*[p1_reward]
-            append_transitions(p1_states, p1_actions, p1_outcomes, run_transitions, use_symmetries, board_size)
+            append_transitions(p1_states, p1_actions, p1_outcomes, run_transitions, use_symmetries, board_size, edge_length, include_dots)
     return run_transitions
 
 

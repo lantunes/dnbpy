@@ -9,19 +9,20 @@ from util.opponent_pool_util import *
 
 board_size = (3, 3)
 num_episodes = 1500000
-learning_rate_schedule = {0: 0.005, 1000000: 0.0005}
-epsilon = 0.1
+learning_rate_schedule = {0: 0.005}
+epsilon_schedule = {0: 0.1, 600000: 0.35}
 batch_size = 32
 decay_speed = 1.0
-opponent_pool_max_size = 10
-num_episodes_per_policy_update = 100
-num_episodes_per_opponent_cache = 1000
+opponent_pool_max_size = 100
+num_episodes_per_policy_update = 500
+num_episodes_per_opponent_cache = 500
 use_symmetries = True
+dropout_keep_prob = 1.0
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-policy = PGPolicy3x3CNN(board_size, batch_size=batch_size, dropout_keep_prob=0.5)
+policy = PGPolicy3x3CNN(board_size, batch_size=batch_size, dropout_keep_prob=dropout_keep_prob)
 L2 = Level2HeuristicPolicy(board_size)
 L1 = Level1HeuristicPolicy(board_size)
 L0 = RandomPolicy()
@@ -30,8 +31,9 @@ opponent_pool = OpponentPool(max_size=opponent_pool_max_size)
 
 opponent_schedule = {0: L0, 200000: L1, 400000: L2, 600000: 'policy'}
 
-print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='watch opponents then self-play pool',
-           reward=reward_fn, updates='offline', learning_rate_schedule=learning_rate_schedule, epsilon=epsilon,
+print_info(board_size=board_size, num_episodes=num_episodes, policy=policy, mode='vs opponents then self-play pool',
+           reward=reward_fn, updates='offline', learning_rate_schedule=learning_rate_schedule,
+           dropout_keep_prob=dropout_keep_prob, epsilon_schedule=epsilon_schedule,
            architecture=policy.get_architecture(), batch_size=batch_size)
 
 unique_states_visited = set()
@@ -39,7 +41,7 @@ all_transitions = []
 
 for episode_num in range(1, num_episodes + 1):
     lr = gen_rate_step(episode_num, learning_rate_schedule)
-    eps = epsilon
+    eps = gen_rate_step(episode_num, epsilon_schedule)
     scheduled_opponent = gen_rate_step(episode_num, opponent_schedule)
     if scheduled_opponent == 'policy':
         opponent = opponent_pool.sample_opponent()
@@ -87,6 +89,9 @@ for episode_num in range(1, num_episodes + 1):
         all_transitions = []
 
     if episode_num % num_episodes_per_opponent_cache == 0:
+        # make sure the policy copy that goes in the pool performs no exploration
+        policy.set_boltzmann_action(False)
+        policy.set_epsilon(0.0)
         opponent_pool.add_to_pool(policy.copy() if scheduled_opponent == 'policy' else opponent)
 
     # analyze results

@@ -1,31 +1,28 @@
 import numpy as np
 
 
-def convert_vector_index_to_coordinates(board_size, vector_index):
-    """
-    Converts vector index to edge matrix coordinates
-    :param board_size: a tuple of ints, (rows, cols), representing the board dimensions
-    :param vector_index: an int representing the index within the vector representation of the board state
-    :return: a tuple, (x, y), representing the coordinates of the edge in the edge matrix
-    """
+def convert_vector_index_to_coordinates(board_size, vector_index, edge_length=1, include_dots=False):
     cols = board_size[1]
-    x = 0
-    y = 0
-    next_x = 0
-    for i in range(vector_index + 1):
-        x = next_x
-        if x % 2 == 0:
-            if y == 2*cols:
-                y = 1
-            else:
-                y += 1 if y == 0 else 2
-            if y == (2*cols - 1):
-                next_x += 1
-        else:
-            y = 0 if y == (2*cols - 1) else y + 2
-            if y == 2*cols:
-                next_x += 1
-    return x, y
+    row_index = (vector_index//(2*cols+1)) * (edge_length + 1)
+    normalized_vector_index = vector_index - (vector_index//(2*cols+1))*(2*cols+1)
+    is_horizontal_edge = normalized_vector_index < cols
+    if is_horizontal_edge:
+        col_index = normalized_vector_index * (edge_length + 1)
+        start_dot_coords = (row_index, col_index)
+        edge_coords = [(row_index, col_index + e + 1) for e in range(edge_length)]
+        end_dot_coords = (row_index, col_index + edge_length + 1)
+    else:
+        col_index = (normalized_vector_index - cols) * (edge_length + 1)
+        start_dot_coords = (row_index, col_index)
+        edge_coords = [(row_index + e + 1, col_index) for e in range(edge_length)]
+        end_dot_coords = (row_index + edge_length + 1, col_index)
+    final_coords = []
+    if include_dots:
+        final_coords.append(start_dot_coords)
+    final_coords.extend(edge_coords)
+    if include_dots:
+        final_coords.append(end_dot_coords)
+    return final_coords
 
 
 def as_string(board_state):
@@ -38,30 +35,46 @@ def init_board_state(board_size):
     return [0]*((2*rows*cols) + rows + cols)
 
 
-def init_edge_matrix(board_size):
+def init_edge_matrix(board_size, edge_length=1, include_dots=True):
     rows = board_size[0]
     cols = board_size[1]
-    even = [1 if i % 2 == 0 else 0 for i in range((2*cols + 1))]
-    odd = [0.0] * (2*cols + 1)
-    return np.array([even if i % 2 == 0 else odd for i in range((2*rows + 1))])
+    width = (cols + 1) + (cols * edge_length)
+    if include_dots:
+        even = [1.0]
+        for i in range(cols):
+            for j in range(edge_length):
+                even.append(0.0)
+            even.append(1.0)
+    else:
+        even = [0.0] * width
+    odd = [0.0] * width
+    edge_matrix = [even]
+    for i in range(rows):
+        for j in range(edge_length):
+            edge_matrix.append(odd)
+        edge_matrix.append(even)
+    return np.array(edge_matrix)
 
 
-def convert_board_state_to_edge_matrix(board_size, board_state):
-    edge_matrix = init_edge_matrix(board_size)
+def convert_board_state_to_edge_matrix(board_size, board_state, edge_length=1, include_dots=True):
+    edge_matrix = init_edge_matrix(board_size, edge_length, include_dots)
     for i in range(len(board_state)):
-        coordinates = convert_vector_index_to_coordinates(board_size, i)
-        edge_matrix[coordinates] = board_state[i]
+        coordinates = convert_vector_index_to_coordinates(board_size, i, edge_length, include_dots=not include_dots)
+        for coord in coordinates:
+            if edge_matrix[coord] != 1:
+                edge_matrix[coord] = board_state[i]
     return edge_matrix.tolist()
 
 
-def convert_edge_matrix_to_board_state(edge_matrix):
+def convert_edge_matrix_to_board_state(edge_matrix, edge_length=1):
     edge_matrix = np.array(edge_matrix)
-    rows = edge_matrix.shape[0] // 2
-    cols = edge_matrix.shape[1] // 2
+    rows = edge_matrix.shape[0] // (2 + (edge_length - 1))
+    cols = edge_matrix.shape[1] // (2 + (edge_length - 1))
     board_state = [0]*((2*rows*cols) + rows + cols)
     for i in range(len(board_state)):
-        coordinates = convert_vector_index_to_coordinates((rows, cols), i)
-        board_state[i] = edge_matrix[coordinates]
+        coordinates = convert_vector_index_to_coordinates((rows, cols), i, edge_length, include_dots=False)
+        for coord in coordinates:
+            board_state[i] = edge_matrix[coord]
     return board_state
 
 

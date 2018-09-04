@@ -2,15 +2,15 @@ from ai import *
 import time
 from util.initializer_util import *
 
-board_size = (2, 2)
+board_size = (3, 3)
 n_games = 1000
 
-player1 = RandomPolicy()
+# player1 = RandomPolicy()
 # player1 = Level1HeuristicPolicy(board_size)
 # player1 = Level2HeuristicPolicy(board_size)
 # player1 = MCTSPolicy(board_size, num_playouts=5000, reset_tree=True)
-# player1 = MCTSPolicy2(board_size, num_playouts=1000)
-# player1 = MCTSPolicy2(board_size, num_playouts=1000, default_policy=Level2HeuristicPolicy(board_size))
+# player1 = MCTSPolicy2(board_size, num_playouts=100000)
+# player1 = MCTSPolicy2(board_size, num_playouts=10000, default_policy=Level2HeuristicPolicy(board_size))
 # player2 = RandomPolicy()
 # player2 = Level1HeuristicPolicy(board_size)
 # player2 = Level2HeuristicPolicy(board_size)
@@ -19,25 +19,27 @@ player1 = RandomPolicy()
 # player2 = MCTSPolicy2(board_size, num_playouts=1000)
 # player2 = MCTSRootParallelPolicy(board_size, num_playouts=1000, num_workers=8)
 # player2 = MCTSPolicy3(board_size, num_playouts=1000)
-# player2 = MCTSPolicy2(board_size, num_playouts=1000, default_policy=Level2HeuristicPolicy(board_size))
-# player2 = MCTSRootParallelPolicy(board_size, num_playouts=250, num_workers=4, default_policy=Level2HeuristicPolicy(board_size))
+# player1 = MCTSPolicy2(board_size, num_playouts=100000, default_policy=Level2HeuristicPolicy(board_size))
+# player1 = MCTSRootParallelPolicy(board_size, num_playouts=1500, num_workers=35, default_policy=Level2HeuristicPolicy(board_size))
 
-pg_params = read_params('../resources/pg_2x2_cnn2_tanh_mcts_exit_03-episode-912000.txt')  # current best model
+# pg_params = read_params('../resources/pg_2x2_cnn2_tanh_mcts_exit_03-episode-912000.txt')  # current best model
 # pg_params = read_params('../resources/pg_2x2_pg_tanh_mcts_exit_probs-episode-658000.txt')
-pg_model = PGPolicyCNN2(board_size, existing_params=pg_params, activation=tf.nn.tanh)
+pg_params = read_params('../resources/dnbpy38-3x3-relu-351000.txt')
+pg_model = PGPolicy3x3CNN(board_size, existing_params=pg_params, activation=tf.nn.relu)
 pg_model.set_boltzmann_action(False)
 pg_model.set_epsilon(0.0)
 
-# player1 = pg_model
-# player1 = MCTSPolicy2(board_size, num_playouts=1000, default_policy=pg_model)
+player1 = pg_model
+# player2 = MCTSPolicy2(board_size, num_playouts=5000, default_policy=pg_model)
+player2 = MCTSPolicyNetPolicy(board_size, num_playouts=5000, w=1000)
 
-# player2 = MCTSPolicy2(board_size, num_playouts=100000, default_policy=Level2HeuristicPolicy(board_size))
+# player2 = MCTSPolicy2(board_size, num_playouts=10000, default_policy=Level2HeuristicPolicy(board_size))
 # player2 = MCTSPolicyNetPolicy(board_size, num_playouts=1000, w=10, default_policy=Level2HeuristicPolicy(board_size))
 # player2 = MCTSPolicyNetPolicy(board_size, num_playouts=1000, w=10)
 # player2 = MCTSPolicyNetPolicyCpuct(board_size, num_playouts=1000, cpuct=5, default_policy=Level2HeuristicPolicy(board_size))
 
-# player1 = MCTSPolicyNetPolicyCpuct(board_size, num_playouts=100, cpuct=5)
-player2 = MCTSPolicyNetPolicyCpuct(board_size, num_playouts=1000, cpuct=5)
+# player2 = MCTSPolicyNetPolicyCpuct(board_size, num_playouts=100, cpuct=5)
+# player2 = MCTSPolicyNetPolicyCpuct(board_size, num_playouts=1000, cpuct=5, default_policy=pg_model)
 
 print("board size: %sx%s" % board_size)
 print("player 1 (%s) vs. player 2 (%s)" % (player1.__class__.__name__, player2.__class__.__name__))

@@ -26,3 +26,5 @@ from .mcts_policy_net_policy import *
 from .mcts_policy_net_policy_cpuct import *
 from .pg_policy_cnn3 import *
 from .pg_policy_cnn4 import *
+from .pg_policy_cnn2_adversarial import *
+from .pg_policy_cnn2b import *
