@@ -12,13 +12,11 @@ board_size = (3, 3)
 num_episodes = 1000000
 learning_rate = 0.005
 min_learning_rate = 0.005
-epsilon = 0.1
 batch_size = 32
 decay_speed = 1.0
 use_symmetries = True
 num_episodes_per_policy_update = 100
-num_episodes_per_mcts_policy_duel = 10000
-num_games_duel_win_margin = 24
+num_episodes_per_search_policy_update = 100
 # episodes_per_thread = [100]  # 1 core
 # episodes_per_thread = [50, 50]  # 2 cores
 # episodes_per_thread = [33, 33, 34]  # 4 cores
@@ -26,125 +24,153 @@ num_games_duel_win_margin = 24
 # episodes_per_thread = [6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]  # 16 cores
 # episodes_per_thread = [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2]  # 36 cores
 # episodes_per_thread = [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]  # 72 cores
-episodes_per_thread = [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2] # 50 cores (even)
+episodes_per_thread = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+                       1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] # 100 cores (even)
 mcts_simulations = 1000
-mcts_w = 100
-activation = tf.nn.relu
-dropout_keep_prob = 0.5
+normalize_policy_probs_with_softmax = False
+mcts_c = 5
+activation = tf.nn.tanh
+dropout_keep_prob = 1.0
 base_path = get_base_path_arg()
 
 print("initializing for (%s, %s) game..." % (board_size[0], board_size[1]))
 
-pg_params = read_params('resources/dnbpy38-3x3-relu-351000.txt')
-curr_policy = PGPolicy3x3CNN(board_size, batch_size=batch_size, dropout_keep_prob=dropout_keep_prob,
-                             existing_params=pg_params, activation=activation)
+curr_policy = PGPolicy3x3CNN(board_size, batch_size=batch_size, dropout_keep_prob=dropout_keep_prob, activation=activation)
 curr_policy.set_boltzmann_action(False)
 curr_policy.set_epsilon(0.0)
-opp_params = curr_policy.get_params()
-mcts_player = MCTSPolicyNetPolicy(board_size, num_playouts=mcts_simulations, w=mcts_w)
+search_policy = PGPolicy3x3CNN(board_size, batch_size=batch_size, dropout_keep_prob=dropout_keep_prob, activation=activation)
+search_policy.set_boltzmann_action(False)
+search_policy.set_epsilon(0.0)
+mcts_player = MCTSPolicyNetPolicyCpuct(board_size, num_playouts=mcts_simulations, cpuct=mcts_c,
+                                       normalize_policy_probs_with_softmax=normalize_policy_probs_with_softmax)
 reward_fn = DelayedBinaryReward()
 
 print_info(board_size=board_size, num_episodes=num_episodes, policy=curr_policy, mode='MCTS ExIt', reward=reward_fn,
            updates='offline', learning_rate=learning_rate, min_learning_rate=min_learning_rate,
            architecture=curr_policy.get_architecture(), batch_size=batch_size, decay_speed=decay_speed,
            num_episodes_per_policy_update=num_episodes_per_policy_update, episodes_per_thread=episodes_per_thread,
-           mcts=mcts_player, mcts_simulations=mcts_simulations, activation=activation, epsilon=epsilon)
-print("num episodes per policy_duel: %s" % num_episodes_per_mcts_policy_duel)
-print("duel win margin: %s" % num_games_duel_win_margin)
-print("MCTS-N w: %s" % mcts_w)
+           mcts=mcts_player, mcts_simulations=mcts_simulations, activation=activation, mcts_c=mcts_c)
 
 unique_states_visited = set()
-all_transitions = []
+winning_transitions = []
+search_transitions = []
 current_episode_num = 0
 
 
-def run_episodes(num_episodes_per_thread, existing_params):
-    pol = PGPolicy3x3CNN(board_size, batch_size=batch_size, existing_params=existing_params, activation=activation)
-    pol.set_boltzmann_action(False)
-    pol.set_epsilon(epsilon)
+def get_selected_index(child_state, parent_state):
+    diff = [x1 - x2 for (x1, x2) in zip(child_state, parent_state)]
+    argmax = max(enumerate(diff), key=lambda x: x[1])[0]
+    return argmax
 
-    opp_pol = PGPolicy3x3CNN(board_size, batch_size=batch_size, existing_params=opp_params, activation=activation)
-    opp_pol.set_boltzmann_action(False)
-    opp_pol.set_epsilon(0.0)
-    opp = MCTSPolicyNetPolicy(board_size, num_playouts=mcts_simulations, w=mcts_w)
 
-    run_transitions = []
+def append_prob_transitions(states, action_prob_maps, outcomes, all_transitions, use_symmetries):
+    for i, _ in enumerate(states):
+        state = states[i]
+
+        action_prob_map = action_prob_maps[i]
+        rows = board_size[0]
+        cols = board_size[1]
+        action_prob = [0.0]*((2*rows*cols) + rows + cols)
+        for st in action_prob_map:
+            indx = get_selected_index([int(i) for i in st], state)
+            action_prob[indx] = action_prob_map[st]
+
+        reward = outcomes[i]
+        if use_symmetries:
+            state_action_symmetries = to_state_action_pair_symmetries(board_size, state, action_prob)
+            for symmetry in state_action_symmetries:
+                all_transitions.append([symmetry[0], symmetry[1], reward])
+        else:
+            all_transitions.append([state, action_prob, reward])
+
+
+def sample_edge(board_state, action_prob_map):
+    choices = []
+    probs = []
+    for state in action_prob_map:
+        choices.append(state)
+        probs.append(action_prob_map[state])
+    selected_state = np.random.choice(choices, p=probs)
+    return get_selected_index([int(i) for i in selected_state], board_state)
+
+
+def run_episodes(num_episodes_per_thread, search_params):
+    search_pol = PGPolicy3x3CNN(board_size, batch_size=batch_size, existing_params=search_params, activation=activation)
+    search_pol.set_boltzmann_action(False)
+    search_pol.set_epsilon(0.0)
+    mcts = MCTSPolicyNetPolicyCpuct(board_size, num_playouts=mcts_simulations, cpuct=mcts_c,
+                                    normalize_policy_probs_with_softmax=normalize_policy_probs_with_softmax)
+
+    action_transitions = []
+    prob_transitions = []
     for episode_num in range(1, num_episodes_per_thread + 1):
-        players = ['policy', 'opponent'] if episode_num % 2 == 0 else ['opponent', 'policy']
+        players = [0, 1] if episode_num % 2 == 0 else [1, 0]
         game = Game(board_size, players)
         current_player = game.get_current_player()
 
-        pol_actions = []
-        opp_actions = []
-        pol_states = []
-        opp_states = []
+        p0_actions = []
+        p1_actions = []
+        p0_states = []
+        p1_states = []
+        p0_action_prob_maps = []
+        p1_action_prob_maps = []
 
         while not game.is_finished():
             board_state = game.get_board_state()
-            if current_player == 'policy':
-                pol_states.append(board_state)
-                edge = pol.select_edge(board_state)
-                pol_actions.append(to_one_hot_action(board_state, edge))
+            if current_player == 0:
+                p0_states.append(board_state)
+                action_prob_map = mcts.get_action_probs(board_state, game.get_score(current_player), search_pol)
+                edge = sample_edge(board_state, action_prob_map)
+                p0_action_prob_maps.append(action_prob_map)
+                p0_actions.append(to_one_hot_action(board_state, edge))
                 current_player, _ = game.select_edge(edge, current_player)
                 unique_states_visited.add(as_string(game.get_board_state()))
             else:
-                opp_states.append(board_state)
-                edge = opp.select_edge(board_state, game.get_score(current_player), opp_pol)
-                opp_actions.append(to_one_hot_action(board_state, edge))
+                p1_states.append(board_state)
+                action_prob_map = mcts.get_action_probs(board_state, game.get_score(current_player), search_pol)
+                edge = sample_edge(board_state, action_prob_map)
+                p1_action_prob_maps.append(action_prob_map)
+                p1_actions.append(to_one_hot_action(board_state, edge))
                 current_player, _ = game.select_edge(edge, current_player)
                 unique_states_visited.add(as_string(game.get_board_state()))
 
-        pol_reward = reward_fn.compute_reward(game, 'policy', 'opponent')
-        opp_reward = reward_fn.compute_reward(game, 'opponent', 'policy')
+        p0_reward = reward_fn.compute_reward(game, 0, 1)
+        p1_reward = reward_fn.compute_reward(game, 1, 0)
 
         # don't add transitions that have 0 reward as the gradient will be zero anyways
-        if pol_reward == 1:
-            pol_outcomes = len(pol_actions)*[pol_reward]
-            append_transitions(pol_states, pol_actions, pol_outcomes, run_transitions, use_symmetries, board_size)
-        elif opp_reward == 1:
-            opp_outcomes = len(opp_actions)*[opp_reward]
-            append_transitions(opp_states, opp_actions, opp_outcomes, run_transitions, use_symmetries, board_size)
-    return run_transitions
-
-
-def have_duel(existing_params):
-    pol = PGPolicy3x3CNN(board_size, batch_size=batch_size, existing_params=existing_params, activation=activation)
-    pol.set_boltzmann_action(False)
-    pol.set_epsilon(0.0)
-
-    mcts_pol = PGPolicy3x3CNN(board_size, batch_size=batch_size, existing_params=opp_params, activation=activation)
-    mcts_pol.set_boltzmann_action(False)
-    mcts_pol.set_epsilon(0.0)
-
-    duel_results = duel(board_size, pol, mcts_pol)
-    return duel_results
+        if p0_reward == 1:
+            p0_outcomes = len(p0_actions)*[p0_reward]
+            append_transitions(p0_states, p0_actions, p0_outcomes, action_transitions, use_symmetries, board_size)
+        elif p1_reward == 1:
+            p1_outcomes = len(p1_actions)*[p1_reward]
+            append_transitions(p1_states, p1_actions, p1_outcomes, action_transitions, use_symmetries, board_size)
+        p0_outcomes = len(p0_action_prob_maps)*[1]
+        append_prob_transitions(p0_states, p0_action_prob_maps, p0_outcomes, prob_transitions, use_symmetries)
+        p1_outcomes = len(p1_action_prob_maps)*[1]
+        append_prob_transitions(p1_states, p1_action_prob_maps, p1_outcomes, prob_transitions, use_symmetries)
+    return action_transitions, prob_transitions
 
 
 while current_episode_num < num_episodes:
-    existing_params = curr_policy.get_params()
-
-    if current_episode_num % num_episodes_per_mcts_policy_duel == 0:
-        # have a duel to see if we should update the MCTS-N policy (on separate process, so as to avoid hanging bug)
-        with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
-            for r in executor.map(have_duel, [existing_params]):
-                duel_results = r
-        won = int(duel_results['won'])
-        lost = int(duel_results['lost'])
-        if (won - lost) >= num_games_duel_win_margin:
-            print("current policy beats previous policy: %s" % duel_results)
-            opp_params = existing_params
+    search_params = search_policy.get_params()
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=len(episodes_per_thread)) as executor:
-        for r in executor.map(run_episodes, episodes_per_thread, [existing_params]*len(episodes_per_thread)):
-            all_transitions.extend(r)
+        for r in executor.map(run_episodes, episodes_per_thread, [search_params]*len(episodes_per_thread)):
+            winning_transitions.extend(r[0])
+            search_transitions.extend(r[1])
     current_episode_num += sum(episodes_per_thread)
 
     lr = gen_rate_exponential(current_episode_num, learning_rate, min_learning_rate, num_episodes, decay_speed)
     curr_policy.set_learning_rate(lr)
+    search_policy.set_learning_rate(lr)
 
     if current_episode_num % num_episodes_per_policy_update == 0:
-        curr_policy.update_model(all_transitions)
-        all_transitions = []
+        curr_policy.update_model(winning_transitions)
+        winning_transitions = []
+
+    if current_episode_num % num_episodes_per_search_policy_update == 0:
+        search_policy.update_model(search_transitions)
+        search_transitions = []
 
     # analyze results
     if current_episode_num % 1000 == 0:
@@ -156,5 +182,5 @@ while current_episode_num < num_episodes:
         print("%s, %s, %s, %s, %s, %s, %s, %s" % (current_episode_num, results[RandomPolicy.__name__]['won'],
                                                   results[Level1HeuristicPolicy.__name__]['won'],
                                                   results[Level2HeuristicPolicy.__name__]['won'],
-                                                  results, len(unique_states_visited), epsilon, lr))
+                                                  results, len(unique_states_visited), 0.0, lr))
         WeightWriter.print_episode(base_path, current_episode_num, curr_policy.print_params)

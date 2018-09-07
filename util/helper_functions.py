@@ -154,3 +154,16 @@ def append_transitions(states, actions, outcomes, all_transitions, use_symmetrie
                 all_transitions.append([symmetry[0], symmetry[1], reward])
         else:
             all_transitions.append([state, action, reward])
+
+
+def append_value_transitions(states, outcomes, all_transitions, use_symmetries, board_size, edge_length=1, include_dots=True):
+    for i in range(len(outcomes)):
+        state = states[i]
+        reward = outcomes[i]
+        state_edge_matrix = convert_board_state_to_edge_matrix(board_size, state, edge_length, include_dots)
+        if use_symmetries:
+            symmetries = convert_edge_matrix_to_symmetries(state_edge_matrix)
+            for symmetry in symmetries:
+                all_transitions.append([convert_edge_matrix_to_board_state(symmetry, edge_length=edge_length), reward])
+        else:
+            all_transitions.append([state, reward])

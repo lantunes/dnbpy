@@ -242,33 +242,63 @@ policy goes first: 1-8 [loss]
 policy goes second: 2-7 [loss]
 
 
-MCTS-N (w, # simulations in parentheses) win rate vs NN:
+N-MCTS (w, # simulations in parentheses) win rate vs NN:
 -----------------------------------------------------------------------
 3x3                 |   NN                           |  L2            |
 -----------------------------------------------------------------------
-MCTS-N (1, 1000)    |  12% (77 games, ~12 sec./game) | 24% (75 games) |
-MCTS-N (10, 1000)   |  24% (82 games, ~12 sec./game) | 47% (121 games)|
-MCTS-N (50, 1000)   |  54% (100 games, ~10 sec./game)| 79% (100 games)|
-MCTS-N (100, 1000)  |  70% (100 games, ~12 sec./game)| 88% (100 games)|
-MCTS-N (500, 1000)  |  65% (124 games, ~15 sec/game) | 87% (116 games)|
+N-MCTS (1, 1000)    |  12% (77 games, ~12 sec./game) | 24% (75 games) |
+N-MCTS (10, 1000)   |  24% (82 games, ~12 sec./game) | 47% (121 games)|
+N-MCTS (50, 1000)   |  54% (100 games, ~10 sec./game)| 79% (100 games)|
+N-MCTS (100, 1000)  |  70% (100 games, ~12 sec./game)| 88% (100 games)|
+N-MCTS (500, 1000)  |  65% (124 games, ~15 sec/game) | 87% (116 games)|
 -----------------------------------------------------------------------
-MCTS-N (100, 5000)  |  54% (100 games, ~70 sec./game)| 83% (100 games)|
-MCTS-N (500, 5000)  |  55% (100 games, ~77 sec./game)| 92% (100 games)|
-MCTS-N (1000, 5000) |  88% (100 games, ~70 sec./game)| 92% (100 games)|
+N-MCTS (100, 5000)  |  54% (100 games, ~70 sec./game)| 83% (100 games)|
+N-MCTS (500, 5000)  |  55% (100 games, ~77 sec./game)| 92% (100 games)|
+N-MCTS (1000, 5000) |  88% (100 games, ~70 sec./game)| 92% (100 games)|
+-----------------------------------------------------------------------
+N-MCTS[N] (100, 1000) |  96% (100 games, ~72 sec/game) | 87% (100 games)|
+-----------------------------------------------------------------------
+N-MCTS[L] (100, 1000) |  63% (100 games, ~42 sec/game) | 76% (100 games)|
+-----------------------------------------------------------------------
+MCTS[N] (1000)      |  56% (393 games, ~60 sec/game) | 48% (390 games)|
 -----------------------------------------------------------------------
 NN = PGPolicy3x3CNN(dnbpy38-3x3-relu-351000.txt, activation=tf.nn.relu)
-MCTS-N = MCTSPolicyNetPolicy, with policy = NN
+N-MCTS = MCTSPolicyNetPolicy, with policy = NN
+N-MCTS[N] = MCTSPolicyNetPolicy, with policy = NN, with default policy NN
+N-MCTS[L] = MCTSPolicyNetPolicy, with policy = NN, with default policy L2
+MCTS[N] = MCTSPolicy2 with default policy NN
 
-duel: MCTS-N (w=100, n=1000) vs. NN: MCTS-N wins 32-16 (~67% win rate for MCTS-N)
-duel: MCTS-N (w=120, n=1000) vs. NN: MCTS-N wins 27-21 (~56% win rate for MCTS-N)
-duel: MCTS-N (w=500, n=5000) vs. NN: MCTS-N wins 28-20 (~58% win rate for MCTS-N)
-duel: MCTS-N (w=1000, n=5000) vs. NN: MCTS-N wins 36-12 (75% win rate for MCTS-N)
-duel: MCTS-N (w=100, n=1000) vs. NN: NN wins 35-13 (~27% win rate for MCTS-N) *normalize_with_softmax=True
+duel: N-MCTS (w=100, n=1000) vs. NN: N-MCTS wins 32-16 (~67% win rate for N-MCTS)
+duel: N-MCTS (w=120, n=1000) vs. NN: N-MCTS wins 27-21 (~56% win rate for N-MCTS)
+duel: N-MCTS (w=500, n=5000) vs. NN: N-MCTS wins 28-20 (~58% win rate for N-MCTS)
+duel: N-MCTS (w=1000, n=5000) vs. NN: N-MCTS wins 36-12 (75% win rate for N-MCTS)
+duel: N-MCTS (w=100, n=1000) vs. NN: NN wins 35-13 (~27% win rate for N-MCTS) *normalize_with_softmax=True
+duel: N-MCTS[N] (w=100, n=1000) vs. NN: N-MCTS[N] wins 43-5 (~90% win rate for N-MCTS[N])
+duel: N-MCTS[N] (w=100, n=1000) vs. L2: N-MCTS[N] wins 42-6 (~88% win rate for N-MCTS[N])
+duel: N-MCTS[L] (w=100, n=1000) vs. L2: N-MCTS[L] wins 39-9 (~81% win rate for N-MCTS[L])
+duel: N-MCTS[L] (w=100, n=1000) vs. NN: N-MCTS[L] wins 29-19 (~60% win rate for N-MCTS[L])
+duel: MCTS[N] (n=1000) vs. NN: MCTS[N] wins 28-20 (~58% win rate for MCTS[N])
+duel: MCTS[N] (n=1000) vs. L2: L2 wins 27-21 (~44% win rate for MCTS[N])
 
-MCTS-N (w=1000, 5000 simulations) vs. dotsandboxes.org 3x3:
+N-MCTS (w=1000, 5000 simulations) vs. dotsandboxes.org 3x3:
 policy goes first: 2-7 [loss]
 policy goes second: 4-5 [loss]
 
-MCTS-N (w=100, 1000 simulations) vs. dotsandboxes.org 3x3:
+N-MCTS (w=100, 1000 simulations) vs. dotsandboxes.org 3x3:
 policy goes first: 3-6 [loss]
 policy goes second: 6-3 [win]
+
+N-MCTS[N] (w=100, 1000 simulations) vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 7-2 [win]
+policy goes first: 1-8 [loss]
+policy goes second: 7-2 [win]
+policy goes first: 1-8 [loss]
+
+N-MCTS[L] (w=100, 1000 simulations) vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 2-7 [loss]
+
+N-MCTS[N] (w=1000, 5000 simulations) vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 3-6 [loss]

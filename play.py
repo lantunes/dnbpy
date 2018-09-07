@@ -63,7 +63,7 @@ def main():
         OPP.set_epsilon(0.0)
 
         # MCTS_PG2 = ai.MCTSPolicy2((board_rows, board_cols), num_playouts=1000, default_policy=OPP)
-        MCTS_PG2 = ai.MCTSPolicyNetPolicy((board_rows, board_cols), num_playouts=1000, w=100)
+        MCTS_PG2 = ai.MCTSPolicyNetPolicy((board_rows, board_cols), num_playouts=1000, w=100, default_policy=OPP)
     else:
         OPP = None
         MCTS_PG2 = None
