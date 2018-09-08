@@ -184,3 +184,4 @@ while current_episode_num < num_episodes:
                                                   results[Level2HeuristicPolicy.__name__]['won'],
                                                   results, len(unique_states_visited), 0.0, lr))
         WeightWriter.print_episode(base_path, current_episode_num, curr_policy.print_params)
+        WeightWriter.print_episode(base_path, current_episode_num, search_policy.print_params, filename_prefix='search-weights-')

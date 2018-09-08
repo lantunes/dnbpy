@@ -302,3 +302,8 @@ policy goes second: 2-7 [loss]
 N-MCTS[N] (w=1000, 5000 simulations) vs. dotsandboxes.org 3x3:
 policy goes first: 2-7 [loss]
 policy goes second: 3-6 [loss]
+
+N2-MCTS[N2] (w=100, 1000 simulations) vs. dotsandboxes.org 3x3:
+* N2 = PGPolicy3x3CNN(dnbpy43-3x3-tanh-305000.txt, activation=tf.nn.tanh)
+policy goes first: 5-4 [win] (performed a double-cross move)
+policy goes second: 4-5 [loss]

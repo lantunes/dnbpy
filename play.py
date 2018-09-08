@@ -57,12 +57,13 @@ def main():
         MCTS_PG = None
 
     if board_rows == 3 and board_cols == 3:
-        pg_params2 = read_params('resources/dnbpy38-3x3-relu-351000.txt')
-        OPP = ai.PGPolicy3x3CNN((board_rows, board_cols), existing_params=pg_params2, activation=tf.nn.relu)
+        pg_params2 = read_params('resources/dnbpy43-3x3-tanh-305000.txt')
+        OPP = ai.PGPolicy3x3CNN((board_rows, board_cols), existing_params=pg_params2, activation=tf.nn.tanh)
         OPP.set_boltzmann_action(False)
         OPP.set_epsilon(0.0)
 
         # MCTS_PG2 = ai.MCTSPolicy2((board_rows, board_cols), num_playouts=1000, default_policy=OPP)
+        # MCTS_PG2 = ai.MCTSPolicyNetPolicyCpuct((board_rows, board_cols), num_playouts=1000, cpuct=5, normalize_policy_probs_with_softmax=False)
         MCTS_PG2 = ai.MCTSPolicyNetPolicy((board_rows, board_cols), num_playouts=1000, w=100, default_policy=OPP)
     else:
         OPP = None

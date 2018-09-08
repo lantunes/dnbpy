@@ -69,9 +69,9 @@ class WeightWriter:
         self._weights_file.close()
 
     @staticmethod
-    def print_episode(base_path, episode_num, printer):
+    def print_episode(base_path, episode_num, printer, filename_prefix='weights-'):
         if base_path is not None:
             base_path += 'weights/'
-            weight_writer = WeightWriter(base_path=base_path, filename='weights-' + str(episode_num) + '.txt')
+            weight_writer = WeightWriter(base_path=base_path, filename=filename_prefix + str(episode_num) + '.txt')
             weight_writer.print(printer)
             weight_writer.close()
