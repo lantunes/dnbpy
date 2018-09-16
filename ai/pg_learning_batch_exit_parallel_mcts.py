@@ -29,7 +29,7 @@ episodes_per_thread = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 mcts_simulations = 1000
 normalize_policy_probs_with_softmax = False
 mcts_c = 5
-activation = tf.nn.tanh
+activation = tf.nn.relu
 dropout_keep_prob = 1.0
 base_path = get_base_path_arg()
 
