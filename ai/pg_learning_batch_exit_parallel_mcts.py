@@ -10,8 +10,8 @@ import concurrent.futures
 
 board_size = (3, 3)
 num_episodes = 1000000
-learning_rate = 0.005
-min_learning_rate = 0.005
+learning_rate = 0.01
+min_learning_rate = 0.01
 batch_size = 32
 decay_speed = 1.0
 use_symmetries = True

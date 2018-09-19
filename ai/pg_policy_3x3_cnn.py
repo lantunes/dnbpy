@@ -89,7 +89,7 @@ class PGPolicy3x3CNN(Policy):
             self._loss = self._cross_entropy * self._outcome
             if self._batch_size > 1:
                 self._loss = tf.reduce_mean(self._loss)
-            self._train_op = tf.train.GradientDescentOptimizer(self._lr).minimize(self._loss)
+            self._train_op = tf.train.AdagradOptimizer(self._lr).minimize(self._loss)
 
             self._conv2d_kernel = [v for v in tf.global_variables() if v.name == 'conv2d/kernel:0'][0]
             self._conv2d_bias = [v for v in tf.global_variables() if v.name == 'conv2d/bias:0'][0]
