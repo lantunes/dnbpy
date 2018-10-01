@@ -39,19 +39,23 @@ class PGPolicy3x3CNN(Policy):
             conv_bias_initializer = existing_param_initializer(existing_params, "conv2d/bias:0", tf.zeros_initializer())
             conv_kernel2_initializer = existing_param_initializer(existing_params, "conv2d_1/kernel:0", tf.random_normal_initializer(0.0, 0.1))
             conv_bias2_initializer = existing_param_initializer(existing_params, "conv2d_1/bias:0", tf.zeros_initializer())
+            conv_kernel3_initializer = existing_param_initializer(existing_params, "conv2d_2/kernel:0", tf.random_normal_initializer(0.0, 0.1))
+            conv_bias3_initializer = existing_param_initializer(existing_params, "conv2d_2/bias:0", tf.zeros_initializer())
+            conv_kernel4_initializer = existing_param_initializer(existing_params, "conv2d_3/kernel:0", tf.random_normal_initializer(0.0, 0.1))
+            conv_bias4_initializer = existing_param_initializer(existing_params, "conv2d_3/bias:0", tf.zeros_initializer())
 
-            self._W_in = tf.get_variable(shape=[5 * 5 * 24, self._n_hidden], initializer=W_in_initializer, name="W_in")
+            self._W_in = tf.get_variable(shape=[5 * 5 * 48, self._n_hidden], initializer=W_in_initializer, name="W_in")
             self._b_in = tf.get_variable(shape=[self._n_hidden], initializer=b_in_initializer, name="b_in")
             self._W_out = tf.get_variable(shape=[self._n_hidden, self._n_output], initializer=W_out_initializer, name="W_out")
 
             self._input_reshaped = tf.reshape(self._input, shape=[tf.shape(self._input)[0], self._n_input_rows, self._n_input_cols, 1])
 
             # Convolutional Layer 1
-            # Computes 12 features using a 3x3 filter with ReLU activation.
+            # Computes 12 features using a 3x3 filter with some activation.
             # Padding is added to preserve width and height.
             # Input Tensor Shape (for the 3x3 board): [None, 7, 7, 1] (batch size, width, height, channels)
             # Output Tensor Shape: [None, 7, 7, 12]
-            self._conv = tf.layers.conv2d(
+            self._conv1 = tf.layers.conv2d(
                 inputs=self._input_reshaped,
                 filters=12,
                 kernel_size=[3, 3],
@@ -62,20 +66,50 @@ class PGPolicy3x3CNN(Policy):
                 activation=self._activation)
 
             # Convolutional Layer 2
-            # Computes 24 features using a 3x3 filter with ReLU activation.
-            # No padding is added.
+            # Computes 24 features using a 3x3 filter with some activation.
+            # Padding is added to preserve width and height.
             # Input Tensor Shape: [None, 7, 7, 12]
-            # Output Tensor Shape: [None, 5, 5, 24]
+            # Output Tensor Shape: [None, 7, 7, 24]
             self._conv2 = tf.layers.conv2d(
-                inputs=self._conv,
+                inputs=self._conv1,
                 filters=24,
                 kernel_size=[3, 3],
                 strides=(1, 1),
+                padding="same",
                 kernel_initializer=conv_kernel2_initializer,
                 bias_initializer=conv_bias2_initializer,
                 activation=self._activation)
 
-            self._conv_flat = tf.reshape(self._conv2, [tf.shape(self._input)[0], 5 * 5 * 24])
+            # Convolutional Layer 3
+            # Computes 36 features using a 3x3 filter with some activation.
+            # Padding is added to preserve width and height.
+            # Input Tensor Shape (for the 2x2 board): [None, 7, 7, 24] (batch size, width, height, channels)
+            # Output Tensor Shape: [None, 7, 7, 36]
+            self._conv3 = tf.layers.conv2d(
+                inputs=self._conv2,
+                filters=36,
+                kernel_size=[3, 3],
+                strides=(1, 1),
+                padding="same",
+                kernel_initializer=conv_kernel3_initializer,
+                bias_initializer=conv_bias3_initializer,
+                activation=self._activation)
+
+            # Convolutional Layer 4
+            # Computes 48 features using a 3x3 filter with some activation.
+            # No padding is added.
+            # Input Tensor Shape: [None, 7, 7, 36]
+            # Output Tensor Shape: [None, 5, 5, 48]
+            self._conv4 = tf.layers.conv2d(
+                inputs=self._conv3,
+                filters=48,
+                kernel_size=[3, 3],
+                strides=(1, 1),
+                kernel_initializer=conv_kernel4_initializer,
+                bias_initializer=conv_bias4_initializer,
+                activation=self._activation)
+
+            self._conv_flat = tf.reshape(self._conv4, [tf.shape(self._input)[0], 5 * 5 * 48])
 
             dense_layer = tf.nn.tanh(tf.matmul(self._conv_flat, self._W_in) + self._b_in)
 
@@ -95,6 +129,10 @@ class PGPolicy3x3CNN(Policy):
             self._conv2d_bias = [v for v in tf.global_variables() if v.name == 'conv2d/bias:0'][0]
             self._conv2d_kernel2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/kernel:0'][0]
             self._conv2d_bias2 = [v for v in tf.global_variables() if v.name == 'conv2d_1/bias:0'][0]
+            self._conv2d_kernel3 = [v for v in tf.global_variables() if v.name == 'conv2d_2/kernel:0'][0]
+            self._conv2d_bias3 = [v for v in tf.global_variables() if v.name == 'conv2d_2/bias:0'][0]
+            self._conv2d_kernel4 = [v for v in tf.global_variables() if v.name == 'conv2d_3/kernel:0'][0]
+            self._conv2d_bias4 = [v for v in tf.global_variables() if v.name == 'conv2d_3/bias:0'][0]
 
         # TF session creation and initialization
         self._sess = tf.Session(graph=g, config=tf.ConfigProto(use_per_session_threads=True))
@@ -102,8 +140,8 @@ class PGPolicy3x3CNN(Policy):
             self._sess.run(tf.global_variables_initializer())
 
     def get_architecture(self):
-        return "7x7-conv(3x3, %s, 12)-conv(3x3, %s, 24)-tanh(500)-softmax(1)" % \
-               (self._activation.__name__, self._activation.__name__)
+        return "7x7-conv(3x3, %s, 12)-conv(3x3, %s, 24)-conv(3x3, %s, 36)-conv(3x3, %s, 48)-tanh(500)-softmax(1)" % \
+               (self._activation.__name__, self._activation.__name__, self._activation.__name__, self._activation.__name__)
 
     def select_edge(self, board_state):
         edge_matrix = convert_board_state_to_edge_matrix(self._board_size, board_state,
@@ -243,6 +281,14 @@ class PGPolicy3x3CNN(Policy):
         params_map["conv2d_1/kernel:0"] = params[0].tolist()
         params = self._sess.run([self._conv2d_bias2])
         params_map["conv2d_1/bias:0"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_kernel3])
+        params_map["conv2d_2/kernel:0"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_bias3])
+        params_map["conv2d_2/bias:0"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_kernel4])
+        params_map["conv2d_3/kernel:0"] = params[0].tolist()
+        params = self._sess.run([self._conv2d_bias4])
+        params_map["conv2d_3/bias:0"] = params[0].tolist()
         return params_map
 
     def copy(self):
@@ -267,3 +313,11 @@ class PGPolicy3x3CNN(Policy):
         f.write("conv2d_1/kernel:0: %s\n" % params[0].tolist())
         params = self._sess.run([self._conv2d_bias2])
         f.write("conv2d_1/bias:0: %s\n" % params[0].tolist())
+        params = self._sess.run([self._conv2d_kernel3])
+        f.write("conv2d_2/kernel:0: %s\n" % params[0].tolist())
+        params = self._sess.run([self._conv2d_bias3])
+        f.write("conv2d_2/bias:0: %s\n" % params[0].tolist())
+        params = self._sess.run([self._conv2d_kernel4])
+        f.write("conv2d_3/kernel:0: %s\n" % params[0].tolist())
+        params = self._sess.run([self._conv2d_bias4])
+        f.write("conv2d_3/bias:0: %s\n" % params[0].tolist())
