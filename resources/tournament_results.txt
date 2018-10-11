@@ -305,5 +305,322 @@ policy goes second: 3-6 [loss]
 
 N2-MCTS[N2] (w=100, 1000 simulations) vs. dotsandboxes.org 3x3:
 * N2 = PGPolicy3x3CNN(dnbpy43-3x3-tanh-305000.txt, activation=tf.nn.tanh)
-policy goes first: 5-4 [win] (performed a double-cross move)
+policy goes first: 5-4 [win] (performed a double-deal move)
 policy goes second: 4-5 [loss]
+
+N2-MCTS[N2] (w=1000, 5000 simulations) vs. dotsandboxes.org 3x3:
+* N2 = PGPolicy3x3CNN(dnbpy43-3x3-tanh-305000.txt, activation=tf.nn.tanh)
+policy goes first: 3-6 [loss]
+policy goes second: 3-6 [loss]
+
+=============
+
+dnbpy44 @ 62000:
+----------------
+
+SP (search policy): PGPolicy3x3CNN(dnbpy44/search-weights-62000.txt, activation=tf.nn.tanh)
+IP (imitation policy):  PGPolicy3x3CNN(dnbpy44/weights-62000.txt, activation=tf.nn.tanh)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 99.4% (L0), 81.3% (L1), 60.5% (L2)
+
+tournaments (1000 games):
+-------------------------
+3x3     |  L1   |  L2   |
+-------------------------
+SP      | 82.0% | 61.3% |
+-------------------------
+IP      | 79.3% | 58.0% |
+-------------------------
+MCTS+SP | 85.0% | 67.0% |
+-------------------------
+
+duels:
+---------------------------------------------------------------------
+3x3     |   SP   |   IP   | MCTS+SP |       L2 (run 1, 2, 3)        |
+---------------------------------------------------------------------
+SP      |   -    |   52%  |         |   63%, 77%, 60% (avg. 66.7%)  |
+---------------------------------------------------------------------
+IP      |   48%  |   -    |   52%   |   48%, 50%, 52% (avg. 50.0%)  |
+---------------------------------------------------------------------
+MCTS+SP |        |   48%  |   -     |   65%, 69%, 58%, (avg. 64.0%) | +14.0%
+---------------------------------------------------------------------
+L2      |   37%  |   52%  |   35%   |   -                           |
+---------------------------------------------------------------------
+
+dnbpy44 @ 152000:
+----------------
+
+SP (search policy): PGPolicy3x3CNN(dnbpy44/search-weights-152000.txt, activation=tf.nn.tanh)
+IP (imitation policy):  PGPolicy3x3CNN(dnbpy44/weights-152000.txt, activation=tf.nn.tanh)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 99.6% (L0), 86.9% (L1), 68.3% (L2)
+
+tournaments (1000 games):
+-------------------------
+3x3     |  L1   |  L2   |
+-------------------------
+SP      | 87.8% | 65.3% |
+-------------------------
+IP      | 84.9% | 63.6% |
+-------------------------
+MCTS+SP | 88.2% | 76.4% |
+-------------------------
+
+duels:
+---------------------------------------------------------------------
+3x3     |   SP   |   IP   | MCTS+SP |       L2 (run 1, 2, 3)        |
+---------------------------------------------------------------------
+SP      |   -    |   23%  |         |   63%  52%, 56% (avg. 57.0%)  |
+---------------------------------------------------------------------
+IP      |   77%  |   -    |   69%   |   63%, 75%, 60% (avg. 66.0%)  |
+---------------------------------------------------------------------
+MCTS+SP |        |   31%  |   -     |   77%, 75%, 67% (avg. 73.0%)  | +7.0%
+---------------------------------------------------------------------
+L2      |   37%  |   37%  |   23%   |   -                           |
+---------------------------------------------------------------------
+
+dnbpy44 @ 305000:
+----------------
+
+SP (search policy): PGPolicy3x3CNN(dnbpy44/search-weights-305000.txt, activation=tf.nn.tanh)
+IP (imitation policy):  PGPolicy3x3CNN(dnbpy44/weights-305000.txt, activation=tf.nn.tanh)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+MCTS+SP2 (MCTS with search policy and search policy as default policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+
+- IP: 99.7% (L0), 92.0% (L1), 80.1% (L2)
+
+tournaments (1000 games):
+-------------------------------------------------------
+3x3     |  L1   |  L2 run 1  |  L2 run 2  | L2 run 3  |
+-------------------------------------------------------
+SP      | 91.7% |  77.4%     |  78.4%     | 75.8%     |
+-------------------------------------------------------
+IP      | 91.2% |  79.5%     |  78.5%     | 80.5%     |
+-------------------------------------------------------
+MCTS+SP | 92.7% |  84.3%     |  86.5%     |           |  (~9 sec/game)
+-------------------------------------------------------
+MCTS+SP2| 91.4% (64 games)  |  88.7% (53 games, ~60 sec/game) |
+-------------------------------------------------------
+
+duels:
+---------------------------------------------------------------------
+3x3     |   SP   |   IP   | MCTS+SP |       L2 (run 1, 2, 3)        |
+---------------------------------------------------------------------
+SP      |   -    |   27%  |         |   73%  79%, 73% (avg. 75.0%)  |
+---------------------------------------------------------------------
+IP      |   73%  |   -    |   58%   |   79%, 85%, 81% (avg. 81.7%)  |
+---------------------------------------------------------------------
+MCTS+SP |        |   42%  |   -     |   85%, 88%, 85% (avg. 86.0%)  | +4.3%
+---------------------------------------------------------------------
+L2      |   27%  |   21%  |   15%   |   -                           |
+---------------------------------------------------------------------
+
+MCTS+SP2 (c=5, 1000 simulations) vs. dotsandboxes.org 3x3:
+policy goes first: 4-5 [loss]
+policy goes second: 2-7 [loss]
+
+=============
+
+dnbpy46 @ 209000:
+----------------
+
+SP (search policy): PGPolicy3x3CNN(dnbpy46/search-weights-209000.txt, activation=tf.nn.tanh)
+IP (imitation policy):  PGPolicy3x3CNN(dnbpy46/weights-209000.txt, activation=tf.nn.tanh)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 100.0% (L0), 95.4% (L1), 88.3% (L2)
+
+duels:
+---------------------------------------------------------------------
+3x3     |   SP   |   IP   | MCTS+SP |       L2 (run 1, 2, 3)        |
+---------------------------------------------------------------------
+SP      |   -    |   31%  |         |   88%  85%, 92% (avg. 88.3%)  |
+---------------------------------------------------------------------
+IP      |   69%  |   -    |   52%   |   88%, 83%, 83% (avg. 84.7%)  |
+---------------------------------------------------------------------
+MCTS+SP |        |   48%  |   -     |   88%, 90%, 94% (avg. 90.7%)  |
+---------------------------------------------------------------------
+L2      |   12%  |   12%  |   12%   |   -                           |
+---------------------------------------------------------------------
+
+MCTS+SP (n=3000, c=5):
+duel vs. L2: 93.8%
+
+MCTS+SP (n=5000, c=5):
+duel vs. L2: 100.0%
+
+MCTS+SP+SP-rollout (n=1000, c=5):
+duel vs. L2: 91.6%
+
+MCTS+SP+IP-rollout (n=1000, c=5):
+duel vs. L2: 91.6%
+
+MCTS_SP+SP-sampling-rollout (n=1000, c=5):
+duel vs. L2: 87.5%
+
+N-MCTS+SP+SP-rollout (n=1000, w=100):
+duel vs. L2: 85.4%
+
+SP vs. dotsandboxes.org 3x3:
+policy goes first: 3-6 [loss]
+policy goes second: 2-7 [loss]
+
+IP vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 3-6 [loss]
+
+MCTS+SP vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 4-5 [loss]
+
+MCTS+SP+SP-rollout vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 5-4 [win] (performed a double-deal move)
+policy goes second: 4-5 [loss]
+
+=============
+
+dnbpy48 @ 228000:
+----------------
+
+SP (search policy): PGPolicy3x3CNN(dnbpy48/search-weights-228000.txt, activation=tf.nn.relu)
+IP (imitation policy):  PGPolicy3x3CNN(dnbpy48/weights-228000.txt, activation=tf.nn.relu)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 100.0% (L0), 95.5% (L1), 91.0% (L2)
+
+duels:
+---------------------------------------------------------------------
+3x3     |   SP   |   IP   | MCTS+SP |       L2 (run 1, 2, 3)        |
+---------------------------------------------------------------------
+SP      |   -    |   48%  |         |   95.5%  87.5%, 83.3% (avg. 88.8%)  |
+---------------------------------------------------------------------
+IP      |   52%  |   -    |   %   |   85.4%, 95.8%, 91.7% (avg. 91.0%)  |
+---------------------------------------------------------------------
+MCTS+SP |        |   %  |   -     |   79.2%, %, % (avg. %)  |
+---------------------------------------------------------------------
+MCTS+IP |        |   60.4%  |   -     |   97.9%, 97.9%, 87.5% (avg. 94.4%)  |
+---------------------------------------------------------------------
+
+MCTS+SP (n=1000, c=5) vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 2-7 [loss]
+
+MCTS+IP (n=1000, c=5) vs. dotsandboxes.org 3x3:
+policy goes first: 3-6 [loss]
+policy goes second: 6-3 [win]
+policy goes second: 3-6 [loss]
+
+MCTS+IP+IP-rollout (n=1000, c=5) vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 3-6 [loss]
+
+MCTS+IP (n=5000, c=5) vs. dotsandboxes.org 3x3:
+policy goes second: 2-7 [loss]
+
+IP vs. dotsandboxes.org 3x3:
+policy goes second: 2-7 [loss]
+
+dnbpy48 @ 292000:
+----------------
+
+SP (search policy): PGPolicy3x3CNN(dnbpy48/search-weights-292000.txt, activation=tf.nn.relu)
+IP (imitation policy):  PGPolicy3x3CNN(dnbpy48/weights-292000.txt, activation=tf.nn.relu)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 100.0% (L0), 97.6% (L1), 91.0% (L2)
+
+duel IP vs IP@228000:
+IP wins 27-21 (56.3%)
+
+duel IP vs MCTS+IP:
+MCTS+IP wins 30-18 (62.5%)
+
+duel IP vs MCTS+SP:
+IP wins 26-22 (54.2%)
+
+IP vs. dotsandboxes.org 3x3:
+policy goes second: 3-6 [loss]
+
+MCTS+IP vs. dotsandboxes.org 3x3:
+policy goes second: 2-7 [loss]
+
+MCTS+IP(n=10000, c=5) vs. dotsandboxes.org 3x3:
+policy goes second: 2-7 [loss]
+
+MCTS+SP(n=10000, c=5) vs. dotsandboxes.org 3x3:
+policy goes second: 3-6 [loss]
+
+dnbpy48 @ 433000:
+----------------
+
+SP (search policy): PGPolicy3x3CNN(dnbpy48/search-weights-433000.txt, activation=tf.nn.relu)
+IP (imitation policy):  PGPolicy3x3CNN(dnbpy48/weights-433000.txt, activation=tf.nn.relu)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 99.9% (L0), 97.4% (L1), 93.5% (L2)
+
+duel IP vs IP@292000:
+IP wins 28-20 (58.3%)
+
+duel IP vs MCTS+IP:
+MCTS-IP wins 25-23 (52.1%)
+
+duel IP vs MCTS+SP:
+IP wins 26-22 (54.2%)
+
+duel MCTS+IP vs L2:
+MCTS+IP wins 45-3 (93.8%)
+
+duel MCTS+SP vs L2:
+MCTS+SP wins 43-5 (89.6%)
+
+duel IP vs L2:
+IP wins 45-3 (93.8%), 41-7, 45-3, 43-5, 41-7
+
+duel SP vs L2:
+SP wins 46-2, 43-5, 42-6, 47-1, 43-5
+
+duel SP vs IP:
+IP wins 30-18 (62.5%)
+
+IP vs. dotsandboxes.org 3x3:
+policy goes first: 3-6 [loss]
+policy goes second: 3-6 [loss]
+
+MCTS+IP vs. dotsandboxes.org 3x3:
+policy goes first: 3-6 [loss]
+policy goes second: 3-6 [loss]
+
+MCTS+SP vs. dotsandboxes.org 3x3:
+policy goes second: 3-6 [loss]
+
+- performed a double-deal against human player
+
+SP vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 6-3 [win] (computer starts at edge 10)
+
+SP vs. Dabble 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 4-5 [loss]
+
+MCTS+SP vs. Dabble 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 4-5 [loss]
+
+IP vs. Dabble 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 4-5 [loss]
+
+SP vs. PRsBoxes 3x3:
+policy goes first: 4-5 [loss]
+policy goes second: 6-3 [win]
+
+MCTS+SP vs. PRsBoxes 3x3:
+policy goes first: 4-5 [loss]
+policy goes second: 5-4 [win]
+
+IP vs. PRsBoxes 3x3:
+policy goes first: 1-8 [loss]
+policy goes second: 5-4 [win]
+
+SP vs. L2 (10,000 games): 91.42%
+IP vs. L2 (10,000 games): 91.26%
+MCTS+SP vs. L2 (10,000 games): 91.18%
