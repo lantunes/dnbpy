@@ -1,14 +1,14 @@
 from dnbpy import *
 
 
-def print_info(board_size, policy, num_episodes, learning_rate=None, min_learning_rate=None, epsilon=None,
+def print_info(board_size, policy, num_episodes=None, num_iterations=None, learning_rate=None, min_learning_rate=None, epsilon=None,
                min_epsilon=None, temperature=None, min_temperature=None, mode='self-play', reward='delayed',
                updates='online', architecture=None, decay_speed=None, rand_prob=None, batch_size=None,
                learning_rate_schedule=None, epsilon_schedule=None, temperature_schedule=None,
                dropout_keep_prob=None, use_symmetries=None, num_episodes_per_policy_update=None,
                num_episodes_per_opponent_cache=None, opponent_pool_max_size=None, episodes_per_thread=None,
                mcts=None, mcts_simulations=None, mcts_c=None, normalize_action_probs_with_softmax=None,
-               activation=None):
+               activation=None, episodes_per_worker=None, episodes_per_iteration=None, num_workers=None):
     print("board size: %sx%s" % board_size)
     print("policy: %s" % policy.__class__.__name__)
     if mcts is not None:
@@ -22,7 +22,10 @@ def print_info(board_size, policy, num_episodes, learning_rate=None, min_learnin
     print("mode: %s" % mode)
     print("reward: %s" % reward)
     print("updates: %s" % updates)
-    print("num episodes: %s" % num_episodes)
+    if num_episodes is not None:
+        print("number of episodes: %s" % num_episodes)
+    if num_iterations is not None:
+        print("number of iterations: %s" % num_iterations)
     if learning_rate is not None:
         print("learning rate: %s" % learning_rate)
     if min_learning_rate is not None:
@@ -59,6 +62,12 @@ def print_info(board_size, policy, num_episodes, learning_rate=None, min_learnin
         print("max opponent pool size: %s" % opponent_pool_max_size)
     if episodes_per_thread is not None:
         print("# episodes per thread: %s" % episodes_per_thread)
+    if num_workers is not None:
+        print("number of workers: %s" % num_workers)
+    if episodes_per_worker is not None:
+        print("episodes per worker: %s" % episodes_per_worker)
+    if episodes_per_iteration is not None:
+        print("episodes per iteration: %s" % episodes_per_iteration)
     if normalize_action_probs_with_softmax is not None:
         print("normalize action probs with softmax: %s" % normalize_action_probs_with_softmax)
     if activation is not None:
