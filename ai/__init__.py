@@ -29,3 +29,4 @@ from .pg_policy_cnn4 import *
 from .pg_policy_cnn2_adversarial import *
 from .pg_policy_cnn2b import *
 from .sl_value_3x3_cnn import *
+from .pg_policy_3x3_cnn_5layer import *

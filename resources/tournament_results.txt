@@ -595,7 +595,7 @@ policy goes second: 3-6 [loss]
 
 SP vs. dotsandboxes.org 3x3:
 policy goes first: 2-7 [loss]
-policy goes second: 6-3 [win] (computer starts at edge 10)
+policy goes second: 6-3 [win] (website starts at edge 10)
 
 SP vs. Dabble 3x3:
 policy goes first: 2-7 [loss]
@@ -624,3 +624,150 @@ policy goes second: 5-4 [win]
 SP vs. L2 (10,000 games): 91.42%
 IP vs. L2 (10,000 games): 91.26%
 MCTS+SP vs. L2 (10,000 games): 91.18%
+
+=============
+
+dnbpy52 @ 225000:
+----------------
+
+SP (search policy): PGPolicy3x3CNN(dnbpy52/weights-225000.txt, activation=tf.nn.relu)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 99.9% (L0), 97.4% (L1), 93.0% (L2)
+
+SP vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 2-7 [loss]
+
+SP vs. L2 (100 games): 93%, 90%, 91%, 91%, 88%, 95%, 89%, 91%, 89%, 90% (mean: 90.7, std: 1.952)
+SP vs. L2 (1,000 games): 90.2%, 89.7%, 91.3%, 89.9%, 90.0%, 90.8%, 91.1%, 89.5%, 88.0%, 89.3% (mean: 89.98, std: 0.917)
+SP vs. L2 (10,000 games): 90.06%, 90.30% (on chilidog), 90.44% (mean: 90.27, std: 0.157)
+SP@287000[L0:100.0%, L1:97.1%, L2:92.9%] vs. L2 (10,000 games): 90.05% (on chilidog)
+SP@303000[L0:100.0%, L1:96.7%, L2:91.6%] vs. L2 (10,000 games): 89.3% (on chilidog)
+* the discrepancy between evaluation performance during training and post-training does not seem to be due to noise
+  - the performance on 1,000 games seems to vary only +/- 1% from the performance on 10,000 games, but we see a
+    difference of more than 2%, consistently
+  - the difference doesn't seem to be due to using the evaluator.py evaluate function
+SP vs. L0 (10,000 games): 99.87%
+SP vs. L1 (10,000 games): 96.79%
+
+==============
+
+dnbpy53 @ 205:
+----------------
+
+SP (search policy): PGPolicy3x3CNN5Layer(dnbpy53/weights-205.txt, activation=tf.nn.relu)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 100.0% (L0), 97.1% (L1), 94.2% (L2)
+
+SP vs. dotsandboxes.org 3x3:
+policy goes first: 5-4 [win]
+policy goes second: 1-8 [loss] (website starts at edge 0)
+policy goes second: 2-7 [loss] (website starts at edge 10)
+
+MCTS+SP vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 3-6 [loss]
+
+SP vs. L2 (10,000 games): 93.12%
+
+SP vs. SP@dnbpy48/search-weights-433000.txt (duel):
+SP@dnbpy48/search-weights-433000.txt wins 27-21
+
+SP vs. IP@dnbpy48/weights-433000.txt (duel):
+IP@dnbpy48/weights-433000.txt wins 27-21
+
+==============
+
+dnbpy54 @ 244:
+----------------
+
+SP (search policy): PGPolicy3x3CNN5Layer(dnbpy54/weights-244.txt, activation=tf.nn.relu)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 99.9% (L0), 96.4% (L1), 93.1% (L2)
+
+SP vs. SP@dnbpy48/search-weights-433000.txt (duel):
+SP@dnbpy48/search-weights-433000.txt wins 25-23
+
+SP vs. SP@dnbpy54/weights-262.txt (duel):
+SP@dnbpy54/weights-262.txt wins 26-22
+
+SP vs. dotsandboxes.org 3x3:
+policy goes first: 3-6 [loss]
+policy goes second: 6-3 [win] (website starts at edge 10)
+
+dnbpy54 @ 262:
+----------------
+
+SP (search policy): PGPolicy3x3CNN5Layer(dnbpy54/weights-262.txt, activation=tf.nn.relu)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 100.0% (L0), 97.0% (L1), 94.2% (L2)
+
+SP vs. SP@dnbpy48/search-weights-433000.txt (duel):
+SP wins 27-21
+
+SP vs. dotsandboxes.org 3x3:
+policy goes first: 5-4 [win] (performs double deal)
+policy goes second: 4-5 [loss] (website starts at edge 0)
+
+dnbpy54 @ 309:
+----------------
+
+SP (search policy): PGPolicy3x3CNN5Layer(dnbpy54/weights-309.txt, activation=tf.nn.relu)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 99.8% (L0), 97.1% (L1), 94.2% (L2)
+
+SP vs. SP@dnbpy48/search-weights-433000.txt (duel):
+SP wins 27-21
+
+SP vs. SP@dnbpy54/weights-262.txt (duel):
+SP wins 28-20
+
+SP vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 2-7 [loss]
+
+dnbpy54 @ 323:
+----------------
+
+SP (search policy): PGPolicy3x3CNN5Layer(dnbpy54/weights-323.txt, activation=tf.nn.relu)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 100.0% (L0), 98.5% (L1), 93.9% (L2)
+
+SP vs. SP@dnbpy48/search-weights-433000.txt (duel):
+SP@dnbpy48/search-weights-433000.txt wins 28-20
+
+SP vs. SP@dnbpy54/weights-262.txt (duel):
+SP@dnbpy54/weights-262.txt wins 26-22
+
+SP vs. SP@dnbpy54/weights-309.txt (duel):
+SP@dnbpy54/weights-309.txt wins 25-23
+
+SP vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 2-7 [loss]
+
+dnbpy54 @ 460
+----------------
+
+SP (search policy): PGPolicy3x3CNN5Layer(dnbpy54/weights-460.txt, activation=tf.nn.relu)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 100.0% (L0), 96.8% (L1), 94.8% (L2)
+
+SP vs. SP@dnbpy48/search-weights-433000.txt (duel):
+SP wins 28-20
+
+SP vs. SP@dnbpy54/weights-262.txt (duel):
+SP wins 28-20
+
+SP vs. SP@dnbpy54/weights-309.txt (duel):
+SP wins 31-17
+
+SP vs. SP@dnbpy54/weights-244.txt (duel):
+SP@dnbpy54/weights-244.txt wins 34-14
+
+SP vs. SP@dnbpy54/weights-323.txt (duel):
+SP@dnbpy54/weights-323.txt wins 31-17
+
+SP vs. dotsandboxes.org 3x3:
+policy goes first: 2-7 [loss]
+policy goes second: 3-6 [loss]
