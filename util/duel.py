@@ -1,7 +1,7 @@
 from dnbpy import *
 
 
-def duel(board_size, p1, p2):
+def duel(board_size, p1, p2, pol):
     """
     :param board_size: the game's board size 
     :param p1: the first player
@@ -37,6 +37,7 @@ def duel(board_size, p1, p2):
                 results['lost'] += 1
             else:
                 results['tied'] += 1
+            print(results)
     return results
 
 

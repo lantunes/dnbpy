@@ -8,7 +8,8 @@ def print_info(board_size, policy, num_episodes=None, num_iterations=None, learn
                dropout_keep_prob=None, use_symmetries=None, num_episodes_per_policy_update=None,
                num_episodes_per_opponent_cache=None, opponent_pool_max_size=None, episodes_per_thread=None,
                mcts=None, mcts_simulations=None, mcts_c=None, normalize_action_probs_with_softmax=None,
-               activation=None, episodes_per_worker=None, episodes_per_iteration=None, num_workers=None):
+               activation=None, episodes_per_worker=None, episodes_per_iteration=None, num_workers=None,
+               num_epochs_per_update=None):
     print("board size: %sx%s" % board_size)
     print("policy: %s" % policy.__class__.__name__)
     if mcts is not None:
@@ -64,6 +65,8 @@ def print_info(board_size, policy, num_episodes=None, num_iterations=None, learn
         print("# episodes per thread: %s" % episodes_per_thread)
     if num_workers is not None:
         print("number of workers: %s" % num_workers)
+    if num_epochs_per_update is not None:
+        print("number of epochs per update: %s" % num_epochs_per_update)
     if episodes_per_worker is not None:
         print("episodes per worker: %s" % episodes_per_worker)
     if episodes_per_iteration is not None:

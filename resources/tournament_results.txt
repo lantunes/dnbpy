@@ -771,3 +771,62 @@ SP@dnbpy54/weights-323.txt wins 31-17
 SP vs. dotsandboxes.org 3x3:
 policy goes first: 2-7 [loss]
 policy goes second: 3-6 [loss]
+
+==============
+
+dnbpy55 @ 63:
+----------------
+
+SP (search policy): PGPolicy3x3CNN5Layer(dnbpy55/weights-63.txt, activation=tf.nn.relu)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 100.0% (L0), 97.4% (L1), 92.1% (L2)
+
+SP vs. SP@dnbpy48/search-weights-433000.txt (duel):
+SP wins 30-18
+
+SP vs. SP@dnbpy54/weights-262.txt (duel):
+SP@dnbpy54/weights-262.txt wins 27-21
+
+SP vs. dotsandboxes.org 3x3:
+policy goes first: 3-6 [loss]
+policy goes second: 6-3 [win]
+
+dnbpy55 @ 135:
+----------------
+
+SP (search policy): PGPolicy3x3CNN5Layer(dnbpy55/weights-135.txt, activation=tf.nn.relu)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 100.0% (L0), 97.7% (L1), 94.6% (L2)
+
+SP vs. SP@dnbpy48/search-weights-433000.txt (duel):
+SP wins 34-14
+
+SP vs. SP@dnbpy54/weights-262.txt (duel):
+SP@dnbpy54/weights-262.txt wins 27-21
+
+SP vs. SP@dnbpy55/weights-63.txt (duel):
+SP wins 34-14
+
+SP vs. dotsandboxes.org 3x3:
+policy goes first: 1-8 [loss]
+policy goes second: 3-6 [loss]
+
+==============
+
+dnbpy57 @ 139:
+----------------
+
+SP (search policy): PGPolicy3x3CNN5Layer(dnbpy57/weights-139.txt, activation=tf.nn.relu)
+MCTS+SP (MCTS with search policy) : MCTSPolicyNetPolicyCpuct(num_playouts=1000, cpuct=5)
+- IP: 99.9% (L0), 96.1% (L1), 92.7% (L2)
+
+SP vs. SP@dnbpy48/search-weights-433000.txt (duel):
+tie 24-24
+
+SP vs. SP@dnbpy54/weights-262.txt (duel):
+SP@dnbpy54/weights-262.txt wins 28-20
+
+SP vs. dotsandboxes.org 3x3:
+policy goes first: 3-6 [loss]
+policy goes second: 4-5 [loss]  (website starts at edge 0)
+policy goes second: 3-6 [loss]  (website starts at edge 10)

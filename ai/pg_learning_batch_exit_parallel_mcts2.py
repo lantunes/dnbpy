@@ -18,6 +18,7 @@ use_symmetries = True
 episodes_per_worker = 2
 num_workers = 100
 episodes_per_iteration = episodes_per_worker * num_workers
+num_epochs_per_update = 15
 mcts_simulations = 1000
 normalize_policy_probs_with_softmax = False
 mcts_c = 5
@@ -117,7 +118,8 @@ if __name__ == '__main__':
            updates='offline', learning_rate=learning_rate, min_learning_rate=min_learning_rate,
            architecture=search_policy.get_architecture(), batch_size=batch_size, decay_speed=decay_speed,
            episodes_per_iteration=episodes_per_iteration, mcts=mcts_player, mcts_simulations=mcts_simulations,
-           activation=activation, mcts_c=mcts_c, episodes_per_worker=episodes_per_worker, num_workers=num_workers)
+           activation=activation, mcts_c=mcts_c, episodes_per_worker=episodes_per_worker, num_workers=num_workers,
+           num_epochs_per_update=num_epochs_per_update)
 
     current_iteration_num = 0
     search_transitions = []
@@ -134,7 +136,8 @@ if __name__ == '__main__':
         search_policy.set_learning_rate(lr)
 
         # update the model
-        search_policy.update_model(search_transitions)
+        for i in range(0, num_epochs_per_update):
+            search_policy.update_model(search_transitions)
         search_transitions = []
 
         # analyze model; play against opponents
