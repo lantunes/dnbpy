@@ -32,25 +32,41 @@ def convert_edge_index_3x3(edge_number):
     }
     return edge_index_map[edge_number]
 
-output_file = open('/Users/luis/dnb-moves.csv', 'w')
+# output_file = open('/Users/luis/dnb-moves.csv', 'w')
 path_to_csv_files = "/Users/luis/dotsandboxes.org-data-labeled-3x3-playeragnostic"
 csv_files = [f for f in listdir(path_to_csv_files) if isfile(join(path_to_csv_files, f))]
+human_moves = 0
+computer_moves = 0
+inferred_moves = 0
 for f in csv_files:
     with open(path_to_csv_files + '/' + f, newline='') as csv_file:
         csv_reader = csv.reader(csv_file)
         for row in csv_reader:
             try:
-                board_state = [0]*24
-                if row[-2] != '[]':
-                    raw_indices = [int(x) for x in row[-2][1:len(row[-2])-1].split(' ')]
-                    converted_indices = [convert_edge_index_3x3(x) for x in raw_indices]
-                    for i in converted_indices:
-                        board_state[i] = 1
-                board_state_string = ''.join([str(x) for x in board_state])
+                # board_state = [0]*24
+                # if row[-2] != '[]':
+                #     raw_indices = [int(x) for x in row[-2][1:len(row[-2])-1].split(' ')]
+                #     converted_indices = [convert_edge_index_3x3(x) for x in raw_indices]
+                #     for i in converted_indices:
+                #         board_state[i] = 1
+                # board_state_string = ''.join([str(x) for x in board_state])
                 print(row)
-                output_file.write(', '.join([board_state_string, str(convert_edge_index_3x3(int(row[-1])))]) + '\n')
+                move = row[-3]
+                if move == 'human':
+                    human_moves += 1
+                elif move == 'computer':
+                    computer_moves += 1
+                elif move == 'inferred':
+                    inferred_moves += 1
+                else:
+                    raise Exception("unknown move: " + move)
+                # output_file.write(', '.join([board_state_string, str(convert_edge_index_3x3(int(row[-1])))]) + '\n')
             except Exception:
                 print(row)
                 raise
-output_file.close()
+print("human moves: %s" % human_moves)
+print("computer moves: %s" % computer_moves)
+print("inferred moves: %s" % inferred_moves)
+print("total moves: %s" % (human_moves + computer_moves + inferred_moves))
+# output_file.close()
 
