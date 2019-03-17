@@ -9,7 +9,7 @@ pip install dnbpy
 ```
 
 Usage example:
-```
+```python
 import dnbpy
 
 game = dnbpy.Game((2, 2), ['player1', 'player2'])
