@@ -1,6 +1,6 @@
 import unittest
 
-import ai
+import dnbpy.ai as ai
 
 
 class TestTabularPolicy(unittest.TestCase):

@@ -1,6 +1,6 @@
 import unittest
 
-from ai import MCTSGame
+from dnbpy.ai import MCTSGame
 
 
 class TestMCTSGame(unittest.TestCase):

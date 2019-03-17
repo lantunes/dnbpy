@@ -1,6 +1,6 @@
 import unittest
 
-from util.rate_util import *
+from dnbpy.util.rate_util import *
 
 
 class TestRateUtil(unittest.TestCase):

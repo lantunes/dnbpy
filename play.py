@@ -2,9 +2,9 @@ import sys
 
 import tensorflow as tf
 
-import ai
 import dnbpy
-from util.initializer_util import read_params
+import dnbpy.ai
+from dnbpy.util.initializer_util import read_params
 
 
 def main():
@@ -32,26 +32,26 @@ def main():
 
     print("preparing game...")
 
-    L1 = ai.Level1HeuristicPolicy((board_rows, board_cols))
-    L2 = ai.Level2HeuristicPolicy((board_rows, board_cols))
+    L1 = dnbpy.ai.Level1HeuristicPolicy((board_rows, board_cols))
+    L2 = dnbpy.ai.Level2HeuristicPolicy((board_rows, board_cols))
 
-    CEP = ai.CausalEntropicPolicy((board_rows, board_cols), max_sample_paths=1000)
+    CEP = dnbpy.ai.CausalEntropicPolicy((board_rows, board_cols), max_sample_paths=1000)
 
     if board_rows == 2 and board_cols == 2:
-        td0 = ai.TDZeroPolicy((board_rows, board_cols), learning_rate=0.0, gamma=0.0,
-                              table_file_path='resources/td0_2x2_0.28_0.01_0.99_immediate_reward.txt')
+        td0 = dnbpy.ai.TDZeroPolicy((board_rows, board_cols), learning_rate=0.0, gamma=0.0,
+                                    table_file_path='resources/td0_2x2_0.28_0.01_0.99_immediate_reward.txt')
 
-        td1 = ai.TDOneTabularPolicy((board_rows, board_cols), learning_rate=0.0, gamma=0.0,
-                                    table_file_path='resources/td1_2x2_0.6_1.0_0.99_delayed_selfplay100k.txt')
+        td1 = dnbpy.ai.TDOneTabularPolicy((board_rows, board_cols), learning_rate=0.0, gamma=0.0,
+                                            table_file_path='resources/td1_2x2_0.6_1.0_0.99_delayed_selfplay100k.txt')
 
         # pg_params = read_params('resources/pg_2x2_cnn2_tanh_mcts_exit_03-episode-912000.txt')
         pg_params = read_params('resources/pg_2x2_cnn2_tanh_dnbpy29-episode-427000.txt')
-        pg_model = ai.PGPolicyCNN2((board_rows, board_cols), existing_params=pg_params, activation=tf.nn.tanh)
+        pg_model = dnbpy.ai.PGPolicyCNN2((board_rows, board_cols), existing_params=pg_params, activation=tf.nn.tanh)
         pg_model.set_boltzmann_action(False)
         pg_model.set_epsilon(0.0)
 
         # MCTS_PG = ai.MCTSPolicyNetPolicyCpuct((board_rows, board_cols), num_playouts=1000, cpuct=5, default_policy=pg_model)
-        MCTS_PG = ai.MCTSPolicy2((board_rows, board_cols), num_playouts=10000, default_policy=pg_model)
+        MCTS_PG = dnbpy.ai.MCTSPolicy2((board_rows, board_cols), num_playouts=10000, default_policy=pg_model)
     else:
         td0 = None
         td1 = None
@@ -67,10 +67,10 @@ def main():
 
         # pg_params3 = read_params('out/dnbpy48/search-weights-433000.txt')
         pg_params3 = read_params('out/dnbpy57/weights-139.txt')
-        OPP = ai.PGPolicy3x3CNN((board_rows, board_cols), existing_params=pg_params3, activation=tf.nn.relu)
+        OPP = dnbpy.ai.PGPolicy3x3CNN((board_rows, board_cols), existing_params=pg_params3, activation=tf.nn.relu)
         OPP.set_boltzmann_action(False)
         OPP.set_epsilon(0.0)
-        MCTS_PG2 = ai.MCTSPolicyNetPolicyCpuct((board_rows, board_cols), num_playouts=1000, cpuct=5,
+        MCTS_PG2 = dnbpy.ai.MCTSPolicyNetPolicyCpuct((board_rows, board_cols), num_playouts=1000, cpuct=5,
                                                normalize_policy_probs_with_softmax=False)
     else:
         OPP = None
