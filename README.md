@@ -22,14 +22,14 @@ game.select_edge(2, 'player2')
 game.select_edge(3, 'player1')
 game.select_edge(5, 'player2')
 
-score = game.get_score('player1')
-# score is 0
+print(game.get_score('player1'))
+# 0
 
-score = game.get_score('player2')
-# score is 1
+print(game.get_score('player2'))
+# 1
 
-game_finished = game.is_finished()
-# game_finished is False
+print(game.is_finished())
+# False
 ```
 
 ## The Board State
@@ -51,7 +51,7 @@ The board edges are indexed as follows (for the 2x2 case):
     *    10   *    11   *
 
 In the example above, if edges 1 and 5 are selected, the board state
-will be `[0,1,0,0,0,1,0,0,0,0,0]`. For other board dimensions, the same
+will be `01000100000`. For other board dimensions, the same
 convention is followed for edge indexing. The horizontal edges at the
 very top of the board are indexed first, left-to-right, followed by the
 vertical edges of the first row, etc.
