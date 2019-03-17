@@ -19,12 +19,9 @@ class Game:
         self._board_size = board_size
         self._players = players
         self._current_player = 0
-        rows = board_size[0]
-        cols = board_size[1]
         self._board_state = init_board_state(board_size)
         self._boxes = self._init_boxes()
         self._players_to_boxes = {}
-        self._edge_matrix = init_edge_matrix(board_size)
         for player in players:
             self._players_to_boxes[player] = []
 
@@ -77,8 +74,6 @@ class Game:
         if player != self._players[self._current_player]:
             raise Exception("next player to play is: %s" % self._players[self._current_player])
         self._board_state[edge_index] = 1
-        coordinates = convert_vector_index_to_coordinates(self._board_size, edge_index)
-        self._edge_matrix[coordinates] += 1
         boxes_made = 0
         for box in self._boxes:
             if box.contains(edge_index) and box.is_complete(self._board_state) and box not in self._players_to_boxes[player]:
@@ -114,9 +109,6 @@ class Game:
         :return: whether the game is finished
         """
         return sum(self._board_state) == len(self._board_state)
-
-    def get_edge_matrix(self):
-        return np.array(self._edge_matrix)
 
     def __str__(self):
         return ToString().apply(self)
