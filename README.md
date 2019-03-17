@@ -1,14 +1,15 @@
 Dots 'n Boxes Game Engine for Python
 ====================================
+DnBPy is a light-weight Dots 'n Boxes game engine for Python. It is
+particularly useful for AI projects, and can be used as an environment
+for Reinforcement Learning projects.
 
-<img src="https://raw.githubusercontent.com/lantunes/dnbpy/master/resources/screenshot.png" width="25%"/>
-
-Installation:
+## Installation
 ```
 pip install dnbpy
 ```
 
-Usage example:
+## Usage example
 ```python
 import dnbpy
 
@@ -28,3 +29,12 @@ score = game.get_score('player2')
 game_finished = game.is_finished()
 # game_finished is False
 ```
+
+## Command-line demo
+
+DnBPy includes a simple command-line demo program. Start the program with:
+```
+python play.py
+```
+
+<img src="https://raw.githubusercontent.com/lantunes/dnbpy/master/resources/screenshot.png" width="25%"/>
