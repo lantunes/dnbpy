@@ -111,6 +111,38 @@ print(str(boxes[0]))
 # 0-2-3-5
 ```
 
+## Built-in Players
+
+DnBPy includes several built-in players, ranging from simple to more complex levels of sophistication and gameplay. 
+These players can be used as follows:
+```
+move = built_in_player.select_edge(game.get_board_state())
+```
+Assuming we already have a `game` of type `dnbpy.Game` initialized, and a `built_in_player` of type `dnbpy.Policy` 
+initialized, the `select_edge` function can be called to get the player's next move. The following built-in players are 
+available:
+
+**Randomly-acting Player**
+- selects an edge randomly
+- initialization: `built_in_player = dnbpy.RandomPolicy()`
+
+**Level 1 Heuristic Player**
+- selects an edge randomly that completes a box, if possible; otherwise, it selects an edge at random
+- initialization: `built_in_player = dnbpy.Level1HeuristicPolicy((rows, cols))`
+
+**Level 2 Heuristic Player**
+- selects an edge randomly that completes a box, if possible; otherwise, it selects an edge randomly that does not allow 
+the opponent to complete a box; otherwise, it selects an edge at random
+- initialization: `built_in_player = dnbpy.Level2HeuristicPolicy((rows, cols))`
+
+**Level 3 Minimax Player**
+- uses depth-limited minimax search with alpha-beta pruning to estimate the value of a board position
+- initialization: `built_in_player = dnbpy.Level3MinimaxPolicy((rows, cols), 200)`
+
+**Level 4 Heuristic Player**
+- combines heuristic rules with a negamax search with alpha-beta pruning to estimate the value of a board position 
+- initialization: `built_in_player = dnbpy.Level3HeuristicPolicy((rows, cols))`
+
 ## Command-line demo
 
 DnBPy includes a simple command-line demo program. Start the program with:
@@ -119,3 +151,6 @@ python play.py
 ```
 
 <img src="https://raw.githubusercontent.com/lantunes/dnbpy/master/resources/screenshot.png" width="25%"/>
+
+To play against the randomly-acting player, or the level 1, 2, 3, or 4 heuristic player, enter one of `$random`, `$L1`, 
+`$L2`, `$L3`, or `$L4` as a player name, respectively.

@@ -45,9 +45,9 @@ class TestGetScore(unittest.TestCase):
         self.assertEqual(str(boxes[0]), '1-3-4-6')
         boxes = game.get_boxes('player2')
         self.assertEqual(len(boxes), 3)
-        self.assertEqual(str(boxes[0]), '0-2-3-5')
-        self.assertEqual(str(boxes[1]), '6-8-9-11')
-        self.assertEqual(str(boxes[2]), '5-7-8-10')
+        self.assertEqual(str(boxes[0]), '5-7-8-10')
+        self.assertEqual(str(boxes[1]), '0-2-3-5')
+        self.assertEqual(str(boxes[2]), '6-8-9-11')
 
     def test_get_score_player_not_recognized(self):
         with self.assertRaises(Exception) as e:
