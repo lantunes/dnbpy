@@ -7,5 +7,6 @@ from .random_policy import *
 from .level1_heuristic_policy import *
 from .level2_heuristic_policy import *
 from .level3_minimax_policy import *
-from .level4_heuristic_policy import *
+from .mcts_policy import *
 from .play import *
+from .duel import *

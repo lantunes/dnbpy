@@ -14,7 +14,7 @@ class RandomPolicy(Policy):
         """
         self._random = Random(random_state)
 
-    def select_edge(self, board_state):
+    def select_edge(self, board_state, score=None, opp_score=None):
         zero_indices = []
         for i in range(len(board_state)):
             if board_state[i] == 0:

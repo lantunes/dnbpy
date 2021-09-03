@@ -137,11 +137,7 @@ the opponent to complete a box; otherwise, it selects an edge at random
 
 **Level 3 Minimax Player**
 - uses depth-limited minimax search with alpha-beta pruning to estimate the value of a board position
-- initialization: `built_in_player = dnbpy.Level3MinimaxPolicy((rows, cols), 200)`
-
-**Level 4 Heuristic Player**
-- combines heuristic rules with a negamax search with alpha-beta pruning to estimate the value of a board position 
-- initialization: `built_in_player = dnbpy.Level3HeuristicPolicy((rows, cols))`
+- initialization: `built_in_player = dnbpy.Level3MinimaxPolicy((rows, cols), 3)`
 
 ## Command-line demo
 
@@ -152,5 +148,5 @@ python play.py
 
 <img src="https://raw.githubusercontent.com/lantunes/dnbpy/master/resources/screenshot.png" width="25%"/>
 
-To play against the randomly-acting player, or the level 1, 2, 3, or 4 heuristic player, enter one of `$random`, `$L1`, 
-`$L2`, `$L3`, or `$L4` as a player name, respectively.
+To play against the randomly-acting player, or the level 1, 2, or 3 heuristic player, enter one of `$random`, `$L1`, 
+`$L2`, or `$L3` as a player name, respectively.
