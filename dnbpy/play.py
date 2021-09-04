@@ -56,7 +56,7 @@ def play():
         "$random": dnbpy.RandomPolicy(),
         "$L1": dnbpy.Level1HeuristicPolicy(board_size=board_size),
         "$L2": dnbpy.Level2HeuristicPolicy(board_size=board_size),
-        "$L3": dnbpy.Level3MinimaxPolicy(board_size=board_size, depth=minimax_depth),
+        "$L3": dnbpy.Level3MinimaxPolicy(board_size=board_size, depth=minimax_depth, update_alpha=True),
         "$mcts": dnbpy.MCTSPolicy(board_size=board_size, num_playouts=num_playouts)
     }
 
