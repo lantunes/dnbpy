@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name="dnbpy",
-      version="0.1",
+      version="0.2",
       description="DnBPy, A Dots 'n Boxes Game Engine for Python",
       long_description="DnBPy is a light-weight Dots 'n Boxes game engine for Python."
                        "It is particularly useful for AI projects, and can be used "

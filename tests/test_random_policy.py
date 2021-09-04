@@ -11,6 +11,12 @@ class TestRandomPolicy(unittest.TestCase):
         edge = policy.select_edge(board_state)
         self.assertTrue(edge == 0 or edge == 3)
 
+    def test_random_policy_with_seed(self):
+        policy = dnbpy.RandomPolicy(random_state=0)
+        board_state = [0, 1, 1, 0]
+        edge = policy.select_edge(board_state)
+        self.assertTrue(edge == 3)
+
     def test_random_policy_raises_exception_when_state_complete(self):
         policy = dnbpy.RandomPolicy()
         board_state = [1, 1, 1, 1]
