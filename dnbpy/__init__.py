@@ -10,3 +10,4 @@ from .level3_minimax_policy import *
 from .mcts_policy import *
 from .play import *
 from .duel import *
+from .strings_and_coins import *

@@ -3,7 +3,7 @@ import unittest
 import dnbpy
 
 
-class TestPolicies(unittest.TestCase):
+class TestPolicyDuel(unittest.TestCase):
 
     def test_level1_vs_random(self):
         board_size = (2, 2)
@@ -77,6 +77,16 @@ class TestPolicies(unittest.TestCase):
         self.assertEqual({'tied': 0, 'lost': 5, 'won': 43}, result[1])
 
     # WARNING: slow test  TODO
+    def test_level1_vs_level3_variable_depth(self):
+        board_size = (3, 3)
+        players = {
+            0: dnbpy.Level1HeuristicPolicy(board_size, random_state=0),
+            1: dnbpy.Level3MinimaxPolicy(board_size, random_state=0)
+        }
+        result = dnbpy.duel(board_size, players)
+        self.assertEqual({'tied': 0, 'lost': 0, 'won': 48}, result[1])
+
+    # WARNING: slow test  TODO
     def test_level2_vs_level3(self):
         board_size = (3, 3)
         players = {
@@ -85,3 +95,13 @@ class TestPolicies(unittest.TestCase):
         }
         result = dnbpy.duel(board_size, players)
         self.assertEqual({'tied': 0, 'lost': 10, 'won': 38}, result[1])
+
+    # WARNING: slow test  TODO
+    def test_level2_vs_level3_variable_depth(self):
+        board_size = (3, 3)
+        players = {
+            0: dnbpy.Level2HeuristicPolicy(board_size, random_state=0),
+            1: dnbpy.Level3MinimaxPolicy(board_size, random_state=0)
+        }
+        result = dnbpy.duel(board_size, players)
+        self.assertEqual({'tied': 0, 'lost': 7, 'won': 41}, result[1])

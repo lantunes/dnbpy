@@ -7,12 +7,17 @@ from .game import Game
 class Level3MinimaxPolicy(Policy):
     """
     A depth-limited minimax policy with alpha-beta pruning. A random edge is selected if there is no best edge.
+    The depth parameter can be either an int or a callable, if the depth is to be determined dynamically given the
+    board state. If depth is None, then a built-in callable depth is used.
+
     See https://en.wikipedia.org/wiki/Minimax and
     https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning for more information.
     """
-    def __init__(self, board_size, depth, random_state=None, heuristic=None):
+    def __init__(self, board_size, depth=None, random_state=None, heuristic=None):
         self._board_size = board_size
         self._depth = depth
+        if self._depth is None:
+            self._depth = self._get_depth
         self._random = Random(random_state)
         self._heuristic = heuristic
 
@@ -20,10 +25,11 @@ class Level3MinimaxPolicy(Policy):
         game = Game(self._board_size, players=["max", "min"], board_state=board_state)
         edges = []
         values = []
+        depth = self._depth(board_state) if callable(self._depth) else self._depth
         for edge in game.get_legal_moves():
             game = Game(self._board_size, players=["max", "min"], board_state=board_state)
             next_player, boxes = game.select_edge(edge, "max")
-            value = self._minimax(game, self._depth, -math.inf, math.inf, next_player, score+boxes, opp_score)
+            value = self._minimax(game, depth, -math.inf, math.inf, next_player, score+boxes, opp_score)
             edges.append(edge)
             values.append(value)
         if min(values) == max(values):
@@ -61,3 +67,9 @@ class Level3MinimaxPolicy(Policy):
         if self._heuristic is not None:
             return self._heuristic(board_state, max_score, min_score)
         return max_score - min_score
+
+    def _get_depth(self, board_state):
+        k = 2.5  # ideal for 3x3
+        if self._board_size[0] * self._board_size[1] > 9:
+            k = 1.5  # ideal for 5x5
+        return int(1.5 + math.e ** (sum(board_state) / (len(board_state) / k)))

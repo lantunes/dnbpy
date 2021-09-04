@@ -30,12 +30,14 @@ def play():
         print("Error: there must be at least one column")
         sys.exit(0)
 
-    minimax_depth = 3
+    minimax_depth = None
     if "$L3" in players:
-        minimax_depth = int(input("Minimax depth: "))
-        if minimax_depth < 1:
-            print("Error: minimax depth must be greater than 0")
-            sys.exit(0)
+        val = input("Minimax depth (leave empty for variable depth): ")
+        if len(val.strip()) > 0:
+            minimax_depth = int(val)
+            if minimax_depth < 1:
+                print("Error: minimax depth must be greater than 0")
+                sys.exit(0)
 
     num_playouts = 100
     if "$mcts" in players:
