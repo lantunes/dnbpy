@@ -27,7 +27,7 @@ class TestLevel3MinimaxPolicy(unittest.TestCase):
     def test_policy_with_heuristic(self):
         board_size = (3, 3)
 
-        def heuristic(board_state, max_score, min_score):
+        def heuristic(board_state, max_score, min_score, is_max):
             return -min_score
 
         players = {

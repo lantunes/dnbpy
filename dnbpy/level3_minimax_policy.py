@@ -49,7 +49,7 @@ class Level3MinimaxPolicy(Policy):
 
     def _minimax(self, game, depth, alpha, beta, player, max_score, min_score):
         if depth == 0 or game.is_finished():
-            return self._eval(game.get_board_state(), max_score, min_score)
+            return self._eval(game.get_board_state(), max_score, min_score, player == "max")
 
         if player == "max":
             value = -math.inf
@@ -73,9 +73,9 @@ class Level3MinimaxPolicy(Policy):
                 beta = min(beta, value)
             return value
 
-    def _eval(self, board_state, max_score, min_score):
+    def _eval(self, board_state, max_score, min_score, is_max):
         if self._heuristic is not None:
-            return self._heuristic(board_state, max_score, min_score)
+            return self._heuristic(board_state, max_score, min_score, is_max)
         return max_score - min_score
 
     def _get_depth(self, board_state):
